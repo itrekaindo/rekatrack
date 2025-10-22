@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Exports\ShippingsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminWebController extends Controller
 {
@@ -16,7 +18,7 @@ class AdminWebController extends Controller
     public function shippingsIndex() {
         $listTravelDocument = TravelDocument::paginate(10);
 
-        return view('General.shippings', compact('listTravelDocument')); 
+        return view('General.shippings', compact('listTravelDocument'));
     }
 
 
@@ -28,7 +30,7 @@ class AdminWebController extends Controller
         ->orWhere('status', 'like', "%$query%")
         ->orWhere('project', 'like', "%$query%")
         ->orderBy('id', 'desc')
-        ->get(); 
+        ->get();
 
         return response()->json(['results' => $results]);
     }
@@ -116,7 +118,7 @@ class AdminWebController extends Controller
     public function showDetail($id) {
         $travelDocument = TravelDocument::with('items')->findOrFail($id);
 
-        return view('detail', compact('travelDocument')); 
+        return view('detail', compact('travelDocument'));
     }
 
     public function shippingsAddTravelDocument(Request $request) {
@@ -237,7 +239,7 @@ class AdminWebController extends Controller
 
     public function showTracker($track_id)
     {
-        $trackingSystem = TrackingSystem::with('track') 
+        $trackingSystem = TrackingSystem::with('track')
             ->where('track_id', $track_id)
             ->firstOrFail();
 
@@ -290,7 +292,23 @@ class AdminWebController extends Controller
             session()->flash($request->status, $request->message);
         }
 
-        return view('General.tracker'); 
+        return view('General.tracker');
+    }
+
+    public function exportShippings(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+
+        return Excel::download(
+            new ShippingsExport($startDate, $endDate),
+            'pengiriman_' . now()->format('Y-m-d_His') . '.xlsx'
+        );
     }
 
 

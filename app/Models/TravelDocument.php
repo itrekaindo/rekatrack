@@ -17,7 +17,10 @@ class TravelDocument extends Model
         'no_travel_document', 'date_no_travel_document', 'send_to', 'po_number', 'reference_number', 'project', 'status',
     ];
 
-    protected $dates = ['deleted_at'];
+    protected $dates = [
+        'deleted_at',
+        'date_no_travel_document',
+    ];
 
     public function items()
     {

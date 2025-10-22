@@ -23,7 +23,7 @@ Route::get('/', function () {
     }
 });
 
-//Auth Web 
+//Auth Web
 Route::get('/login', function () {
     return view('Auth.login');
 })->name('login');
@@ -38,6 +38,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::put('/profile/update', [ProfileWebController::class, 'update'])->name('profile.update');
 
+    Route::get('/shippings/export', [AdminWebController::class, 'exportShippings'])
+    ->name('shippings.export');
     Route::get('/shippings-search', [AdminWebController::class, 'searchDocument']);
     Route::get('/shippings', [AdminWebController::class, 'shippingsIndex'])->name('shippings.index');
     Route::get('/shippings/{id}', [AdminWebController::class, 'shippingsDetail'])->name('shippings.detail');
@@ -53,7 +55,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/tracking', function () {
         return view('General.tracker');
     })->name('tracking');
-    
+
     Route::get('/search-travel-document', [AdminWebController::class, 'search']);
 
     Route::get('/units', [UnitWebController::class, 'index'])->name('units.index');

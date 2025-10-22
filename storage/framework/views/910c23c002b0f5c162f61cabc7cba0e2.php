@@ -1,62 +1,80 @@
 <!doctype html>
- <html lang="id">
-   <head>
-     <meta charset="UTF-8" />
-     <meta
-       name="viewport"
-       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
-     />
-      <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-      <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
-     <title>
-       Manajemen Pengiriman | Rekatrack
-     </title>
-   </head>
-     <?php echo app('Illuminate\Foundation\Vite')('resources/css/app.css'); ?>
-     <?php echo app('Illuminate\Foundation\Vite')('resources/js/app.js'); ?>
-   <body
-     x-data="{ page: 'ecommerce', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false }"
-     x-init="
-          darkMode = JSON.parse(localStorage.getItem('darkMode'));
-          $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
-     :class="{'dark bg-gray-900': darkMode === true}"
-   >   
-     <!-- ===== Preloader Start ===== -->
-     <?php echo $__env->make('partials.preloader', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-     <!-- ===== Preloader End ===== -->
- 
-     <!-- ===== Page Wrapper Start ===== -->
-     <div class="flex h-screen overflow-hidden">
-       <!-- ===== Sidebar Start ===== -->
-       <?php echo $__env->make('Template.sidebar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-       <!-- ===== Sidebar End ===== -->
- 
-       <!-- ===== Content Area Start ===== -->
-       <div
-         class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto"
-       >
-         <!-- Small Device Overlay Start -->
-         <?php echo $__env->make('partials.overlay', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-         <!-- Small Device Overlay End -->
- 
-         <!-- ===== Header Start ===== -->
-         <?php echo $__env->make('Template.header', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-         <!-- ===== Header End ===== -->
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title>Manajemen Pengiriman | Rekatrack</title>
+  </head>
+  <?php echo app('Illuminate\Foundation\Vite')('resources/css/app.css'); ?>
+  <?php echo app('Illuminate\Foundation\Vite')('resources/js/app.js'); ?>
+  <body
+    x-data="{
+      page: 'ecommerce',
+      loaded: true,
+      darkMode: false,
+      stickyMenu: false,
+      sidebarToggle: false,
+      scrollTop: false,
+      showExportModal: false
+    }"
+    x-init="
+      darkMode = JSON.parse(localStorage.getItem('darkMode'));
+      $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))
+    "
+    :class="{'dark bg-gray-900': darkMode === true}"
+  >
+    <!-- ===== Preloader Start ===== -->
+    <?php echo $__env->make('partials.preloader', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+    <!-- ===== Preloader End ===== -->
 
-         <!-- ===== Main Content Start ===== -->
-         <main>
-         <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-             <div x-data="{ pageName: `Manajemen Pengiriman`, subPageName: ''}">
-                 <?php echo $__env->make('Template.breadcrumb', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-             </div>
- 
-             <!-- Start Tables -->
-             <!-- Search Form -->
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <a href="<?php echo e(route('shippings.add')); ?>" class="rounded-md bg-blue-500 text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs hover:bg-blue-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                Tambah Pengiriman
-              </a>
+    <!-- ===== Page Wrapper Start ===== -->
+    <div class="flex h-screen overflow-hidden">
+      <!-- ===== Sidebar Start ===== -->
+      <?php echo $__env->make('Template.sidebar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+      <!-- ===== Sidebar End ===== -->
 
+      <!-- ===== Content Area Start ===== -->
+      <div class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
+        <!-- Small Device Overlay Start -->
+        <?php echo $__env->make('partials.overlay', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+        <!-- Small Device Overlay End -->
+
+        <!-- ===== Header Start ===== -->
+        <?php echo $__env->make('Template.header', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+        <!-- ===== Header End ===== -->
+
+        <!-- ===== Main Content Start ===== -->
+        <main>
+          <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+            <div x-data="{ pageName: `Manajemen Pengiriman`, subPageName: '' }">
+              <?php echo $__env->make('Template.breadcrumb', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+            </div>
+
+            <!-- Search + Export Controls -->
+            <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
+              <!-- Left Group: Tambah & Export -->
+              <div class="flex flex-wrap items-center gap-3">
+                <!-- Tambah Pengiriman -->
+                <a href="<?php echo e(route('shippings.add')); ?>" class="rounded-md bg-blue-500 text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs hover:bg-blue-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                  Tambah Pengiriman
+                </a>
+
+                <!-- Export Button with Icon -->
+                <button
+                  type="button"
+                  @click="showExportModal = true"
+                  class="flex items-center gap-2 rounded-md bg-green-600 text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                  aria-label="Export Excel"
+                >
+                  <img src="<?php echo e(asset('images/icons/export.svg')); ?>" alt="Export" class="h-4 w-4" /></button>
+              </div>
+
+              <!-- Right: Search -->
               <div x-data="searchDocumentComponent()" class="relative w-64 flex-shrink-0">
                 <input
                   type="text"
@@ -91,10 +109,8 @@
               </div>
             </div>
 
-
-             </div>
-             <!-- End Search Form -->
-              <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] px-4 sm:px-6 mx-4">
+            <!-- Table -->
+            <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] px-4 sm:px-6 mx-4 mt-4">
               <div class="max-w-full overflow-x-auto">
                 <table class="min-w-full">
                   <thead>
@@ -140,7 +156,7 @@
                     <?php $__currentLoopData = $listTravelDocument; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                       <tr>
                         <td class="px-2 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400"><?php echo e($index + 1); ?></p>
+                          <p class="text-gray-500 text-theme-sm dark:text-gray-400"><?php echo e($index + $listTravelDocument->firstItem()); ?></p>
                         </td>
                         <td class="px-5 py-4 sm:px-6">
                           <p class="text-gray-500 text-theme-sm dark:text-gray-400"><?php echo e($data->no_travel_document); ?></p>
@@ -155,7 +171,7 @@
                           <p class="text-gray-500 text-theme-sm dark:text-gray-400"><?php echo e($data->project); ?></p>
                         </td>
                         <td class="px-5 py-4 sm:px-6 whitespace-nowrap">
-                          <p class="text-gray-500 inl text-theme-sm dark:text-gray-400"><?php echo e($data->status); ?></p>
+                          <p class="text-gray-500 text-theme-sm dark:text-gray-400"><?php echo e($data->status); ?></p>
                         </td>
                         <td class="px-5 py-4 sm:px-6">
                           <div class="flex space-x-2">
@@ -186,6 +202,79 @@
               </div>
             </div>
           </div>
+
+          <!-- Export Modal -->
+          <div
+            x-show="showExportModal"
+            x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+            style="display: none;"
+            @click="showExportModal = false"
+          >
+            <div
+              @click.stop
+              class="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800"
+            >
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Export Data Pengiriman</h3>
+                <button
+                  type="button"
+                  @click="showExportModal = false"
+                  class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  aria-label="Close modal"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+
+              <form method="GET" action="<?php echo e(route('shippings.export')); ?>">
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Dari Tanggal</label>
+                    <input
+                      type="date"
+                      name="start_date"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sampai Tanggal</label>
+                    <input
+                      type="date"
+                      name="end_date"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                  </div>
+
+                  <div class="flex justify-end space-x-3 pt-2">
+                    <button
+                      type="button"
+                      @click="showExportModal = false"
+                      class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-500"
+                    >
+                      <img src="<?php echo e(asset('images/icons/export.svg')); ?>" alt="Export" class="h-4 w-4" />
+                      Export
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
         </main>
-   </body>
- </html<?php /**PATH /home/server/Reka/current-rekatrack/current/resources/views/General/shippings.blade.php ENDPATH**/ ?>
+        <!-- ===== Main Content End ===== -->
+      </div>
+      <!-- ===== Content Area End ===== -->
+    </div>
+    <!-- ===== Page Wrapper End ===== -->
+  </body>
+</html>
+<?php /**PATH /home/server/Reka/current-rekatrack/current/resources/views/General/shippings.blade.php ENDPATH**/ ?>

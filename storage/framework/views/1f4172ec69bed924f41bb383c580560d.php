@@ -8,7 +8,7 @@
     />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>
-      Manajemen Pengguna | Rekatrack
+      Manajemen Pengiriman | Rekatrack
     </title>
   </head>
   <?php echo app('Illuminate\Foundation\Vite')('resources/css/app.css'); ?>
@@ -45,8 +45,8 @@
         <!-- ===== Main Content Start ===== -->
         <main>
           <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-            <div x-data="{ 
-                pageName: 'Manajemen Pengiriman', 
+            <div x-data="{
+                pageName: 'Manajemen Pengiriman',
                 subPageName: 'Tambah Data Pengiriman'}">
               <?php echo $__env->make('Template.breadcrumb', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             </div>
@@ -147,7 +147,7 @@
                       }
                   }
               ?>
-              
+
               <div class="space-y-6">
                 <div
                   x-data="{
@@ -166,7 +166,7 @@
                         Total barang: <span x-text="totalBarang"></span>
                       </h3>
                     </div>
-                  
+
                     <div class="space-y-6 border-t border-gray-100 p-5 sm:p-6 dark:border-gray-800">
                         <template x-for="(form, index) in forms" x-bind:key="index">
                           <div>
@@ -270,7 +270,7 @@
                                   class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-full w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                                 />
                               </div>
-                              
+
                               <div class="flex justify-end space-x-4">
                                 <button type="button" @click="forms.splice(index, 1); totalBarang--"
                                   :class="forms.length <= 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-400'"
@@ -281,16 +281,16 @@
                               </div>
                             </div>
                             <hr class="border-t border-gray-300 dark:border-gray-800 mt-2" />
-                            
+
                           </div>
-                          
+
                         </template>
 
                         <div class="justify-end flex space-x-4">
-                          <button type="button" @click="if (forms.length < 10) { forms.push({ itemName:'', itemCode: '', quantitySend: '', unitType: '', description: '', totalSend: '', information: '', qtyPreOrder:'' }); totalBarang++ }" :class="forms.length >= 10 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-400'" :disabled="forms.length >= 10" class="rounded-md text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                          <button type="button" @click="if (forms.length < 50) { forms.push({ itemName:'', itemCode: '', quantitySend: '', unitType: '', description: '', totalSend: '', information: '', qtyPreOrder:'' }); totalBarang++ }" :class="forms.length >= 50 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-400'" :disabled="forms.length >= 50" class="rounded-md text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                             Tambah Item
                           </button>
-                          
+
                           <button type="submit" :class="forms.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-400'" :disabled="forms.length === 0" class="rounded-md text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                             Submit
                           </button>
