@@ -1,191 +1,115 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
-    />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
-    <title>
-      Manajemen Pengguna | Rekatrack
-    </title>
-  </head>
-    <?php echo app('Illuminate\Foundation\Vite')('resources/css/app.css'); ?>
-    <?php echo app('Illuminate\Foundation\Vite')('resources/js/app.js'); ?>
-  <body
-    x-data="{ page: 'ecommerce', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false }"
-    x-init="
-         darkMode = JSON.parse(localStorage.getItem('darkMode'));
-         $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
-    :class="{'dark bg-gray-900': darkMode === true}"
-  >
-    <!-- ===== Preloader Start ===== -->
-    <?php echo $__env->make('partials.preloader', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-    <!-- ===== Preloader End ===== -->
+<?php $__env->startSection('title', 'Manajemen Pengguna - RekaTrack'); ?>
+<?php ($pageName = 'Manajemen Pengguna'); ?>
 
-    <!-- ===== Page Wrapper Start ===== -->
-    <div class="flex h-screen overflow-hidden">
-      <!-- ===== Sidebar Start ===== -->
-      <?php echo $__env->make('Template.sidebar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-      <!-- ===== Sidebar End ===== -->
-
-      <!-- ===== Content Area Start ===== -->
-      <div
-        class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto"
-      >
-        <!-- Small Device Overlay Start -->
-        <?php echo $__env->make('partials.overlay', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-        <!-- Small Device Overlay End -->
-
-        <!-- ===== Header Start ===== -->
-        <?php echo $__env->make('Template.header', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-        <!-- ===== Header End ===== -->
-
-        <!-- ===== Main Content Start ===== -->
-        <main>
-        <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-          <div x-data="{ pageName: `Manajemen Pengguna`, subPageName: ''}">
-            <?php echo $__env->make('Template.breadcrumb', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-        </div>
-
-        <!-- Start Tables -->
-        <!-- Search Form -->
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <a href="<?php echo e(route('users.add')); ?>" class="rounded-md bg-blue-500 text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs hover:bg-blue-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Tambah Pengguna</a>
-          <div x-data="userSearchComponent()" class="relative w-64">
-            <input
-              type="text"
-              placeholder="Cari..."
-              x-model="query"
-              @keydown.enter.prevent="search()"
-              class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 pl-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-            />
-            <button
-              @click="search()"
-              class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
-              aria-label="Search"
-              type="button"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197M15.803 15.803A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-        <!-- End Search Form -->
-
-        <!-- Start Table Content -->
-        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-          <div class="max-w-full overflow-x-auto">
-            <table class="min-w-full">
-              <thead>
-                <tr class="border-b border-gray-100 dark:border-gray-800">
-                  <th class="px-5 py-3 sm:px-6">
-                    <div class="flex items-center">
-                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">No</p>
-                    </div>
-                  </th>
-                  <th class="px-5 py-3 sm:px-6">
-                    <div class="flex items-center">
-                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">NIP</p>
-                    </div>
-                  </th>
-                  <th class="px-5 py-3 sm:px-6">
-                    <div class="flex items-center">
-                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama Pengguna</p>
-                    </div>
-                  </th>
-                  <th class="px-5 py-3 sm:px-6">
-                    <div class="flex items-center">
-                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Alamat E-mail</p>
-                    </div>
-                  <th class="px-5 py-3 sm:px-6">
-                    <div class="flex items-center">
-                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nomor Telepon</p>
-                    </div>
-                  </th>
-                  <th class="px-5 py-3 sm:px-6">
-                    <div class="flex items-center">
-                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Role</p>
-                    </div>
-                  </th>
-                  <th class="px-5 py-3 sm:px-6">
-                    <div class="flex items-center">
-                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p>
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody id="user-table-body" class="divide-y divide-gray-100 dark:divide-gray-800">
-              <?php $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                  <tr>
-                      <td class="px-5 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400">
-                              <?php echo e($loop->iteration + ($users->currentPage() - 1) * $users->perPage()); ?>
-
-                          </p> <!-- Nomor urut -->
-                      </td>
-                      <td class="px-5 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400"><?php echo e($user->nip); ?></p> <!-- Nomor urut -->
-                      </td>
-                      <td class="px-5 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400"><?php echo e($user->name); ?></p> <!-- Nama Pengguna -->
-                      </td>
-                      <td class="px-5 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400"><?php echo e($user->email); ?></p> <!-- Alamat E-mail -->
-                      </td>
-                      <td class="px-5 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400"><?php echo e($user->phone_number); ?></p> <!-- Nomor Telepon -->
-                      </td>
-                      <td class="px-5 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400"><?php echo e($user->role->name); ?></p> <!-- Role -->
-                      </td>
-                      <td class="px-5 py-4 sm:px-6">
-                          <div class="flex space-x-2">
-                              <!-- Tombol Aksi -->
-                              <!-- <a href="<?php echo e(route('users.update', ['id' => $user->id])); ?>" class="text-blue-600 dark:text-blue-400 hover:underline">Edit</a> -->
-                              <form action="<?php echo e(route('users.edit', ['id' => $user['id']])); ?>" method="GET">
-                                  <button type="submit" class="text-blue-600 dark:text-blue-400 hover:underline">
-                                      Edit
-                                  </button>
-                              </form>
-                              <form action="<?php echo e(route('users.destroy', ['id' => $user['id']])); ?>" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus?');">
-                                  <?php echo csrf_field(); ?>
-                                  <?php echo method_field('DELETE'); ?>
-                                  <button type="submit" class="text-red-600 dark:text-red-400 hover:underline">Hapus</button>
-                              </form>
-
-                          </div>
-                      </td>
-                  </tr>
-              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-
-              </tbody>
-            </table>
-
-            <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p class="text-sm text-gray-500 dark:text-gray-300 mb-2 sm:mb-0">
-                  Menampilkan <?php echo e($users->firstItem()); ?> ke <?php echo e($users->lastItem()); ?> dari total <?php echo e($users->total()); ?> data
-              </p>
-              <div>
-                  <?php echo e($users->links('pagination::tailwind')); ?>
-
-              </div>
-            </div>
-
-            
-            </div>
-          </div>
-          </div>
-        </main>
-        <!-- ===== Main Content End ===== -->
+<?php $__env->startSection('content'); ?>
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="card-title mb-0">Daftar Pengguna</h4>
+        <a href="<?php echo e(route('users.add')); ?>" class="btn btn-primary btn-round">
+          <i class="fas fa-plus me-1"></i> Tambah Pengguna
+        </a>
       </div>
-      <!-- ===== Content Area End ===== -->
-    </div>
-    <!-- ===== Page Wrapper End ===== -->
-  </body>
+      <div class="card-body">
+        <!-- Pencarian -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <form action="<?php echo e(route('users.index')); ?>" method="GET" class="d-flex">
+              <input
+                type="text"
+                name="search"
+                value="<?php echo e(request('search')); ?>"
+                class="form-control"
+                placeholder="Cari pengguna (nama, email, NIP...)"
+              />
+              <button type="submit" class="btn btn-outline-secondary ms-2">
+                <i class="fas fa-search"></i>
+              </button>
+            </form>
+          </div>
+        </div>
 
-</html>
-<?php /**PATH /home/server/Reka/current-rekatrack/current/resources/views/General/users.blade.php ENDPATH**/ ?>
+        <!-- Tabel -->
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th width="5%">No</th>
+                <th>NIP</th>
+                <th>Nama Pengguna</th>
+                <th>Email</th>
+                <th>Telepon</th>
+                <th width="15%">Role</th>
+                <th class="text-center" width="15%">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php $__empty_1 = true; $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <tr>
+                  <td><?php echo e($users->firstItem() + $index); ?></td>
+                  <td><?php echo e($user->nip ?? '-'); ?></td>
+                  <td><?php echo e($user->name); ?></td>
+                  <td><?php echo e($user->email); ?></td>
+                  <td><?php echo e($user->phone_number ?? '-'); ?></td>
+                  <td>
+                    <?php if($user->role): ?>
+                      <span class="badge badge-info"><?php echo e($user->role->name); ?></span>
+                    <?php else: ?>
+                      <span class="text-muted">-</span>
+                    <?php endif; ?>
+                  </td>
+                  <td class="text-center">
+                    <div class="form-button-action">
+                      <a
+                        href="<?php echo e(route('users.edit', $user->id)); ?>"
+                        class="btn btn-link btn-secondary btn-lg"
+                        title="Edit"
+                      >
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      <form
+                        action="<?php echo e(route('users.destroy', $user->id)); ?>"
+                        method="POST"
+                        class="d-inline"
+                        onsubmit="return confirm('Yakin ingin menghapus pengguna \"<?php echo e($user->name); ?>\"?')"
+                      >
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('DELETE'); ?>
+                        <button type="submit" class="btn btn-link btn-danger btn-lg" title="Hapus">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                <tr>
+                  <td colspan="7" class="text-center py-4 text-muted">
+                    <i class="fas fa-users fs-2 d-block mb-2"></i>
+                    Tidak ada pengguna ditemukan
+                  </td>
+                </tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <?php if($users->hasPages()): ?>
+        <div class="card-footer d-flex justify-content-between align-items-center">
+          <small class="text-muted">
+            Menampilkan <?php echo e($users->firstItem()); ?>–<?php echo e($users->lastItem()); ?> dari <?php echo e($users->total()); ?> data
+          </small>
+          <nav aria-label="Navigasi halaman">
+            <?php echo e($users->onEachSide(1)->links('pagination.kaiadmin')); ?>
+
+          </nav>
+        </div>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /home/server/Reka/current-rekatrack/current/resources/views/General/users.blade.php ENDPATH**/ ?>

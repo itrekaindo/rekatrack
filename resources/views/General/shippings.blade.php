@@ -1,278 +1,454 @@
-<!doctype html>
-<html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
-    />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Manajemen Pengiriman | Rekatrack</title>
-  </head>
-  @vite('resources/css/app.css')
-  @vite('resources/js/app.js')
-  <body
-    x-data="{
-      page: 'ecommerce',
-      loaded: true,
-      darkMode: false,
-      stickyMenu: false,
-      sidebarToggle: false,
-      scrollTop: false,
-      showExportModal: false
-    }"
-    x-init="
-      darkMode = JSON.parse(localStorage.getItem('darkMode'));
-      $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))
-    "
-    :class="{'dark bg-gray-900': darkMode === true}"
-  >
-    <!-- ===== Preloader Start ===== -->
-    @include('partials.preloader')
-    <!-- ===== Preloader End ===== -->
+@extends('layouts.app')
 
-    <!-- ===== Page Wrapper Start ===== -->
-    <div class="flex h-screen overflow-hidden">
-      <!-- ===== Sidebar Start ===== -->
-      @include('Template.sidebar')
-      <!-- ===== Sidebar End ===== -->
+@section('title', 'Manajemen Pengiriman - RekaTrack')
+@php($pageName = 'Manajemen Pengiriman')
 
-      <!-- ===== Content Area Start ===== -->
-      <div class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
-        <!-- Small Device Overlay Start -->
-        @include('partials.overlay')
-        <!-- Small Device Overlay End -->
-
-        <!-- ===== Header Start ===== -->
-        @include('Template.header')
-        <!-- ===== Header End ===== -->
-
-        <!-- ===== Main Content Start ===== -->
-        <main>
-          <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-            <div x-data="{ pageName: `Manajemen Pengiriman`, subPageName: '' }">
-              @include('Template.breadcrumb')
-            </div>
-
-            <!-- Search + Export Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
-              <!-- Left Group: Tambah & Export -->
-              <div class="flex flex-wrap items-center gap-3">
-                <!-- Tambah Pengiriman -->
-                <a href="{{ route('shippings.add') }}" class="rounded-md bg-blue-500 text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs hover:bg-blue-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                  Tambah Pengiriman
-                </a>
-
-                <!-- Export Button with Icon -->
-                <button
-                  type="button"
-                  @click="showExportModal = true"
-                  class="flex items-center gap-2 rounded-md bg-green-600 text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
-                  aria-label="Export Excel"
-                >
-                  <img src="{{ asset('images/icons/export.svg') }}" alt="Export" class="h-4 w-4" /></button>
-              </div>
-
-              <!-- Right: Search -->
-              <div x-data="searchDocumentComponent()" class="relative w-64 flex-shrink-0">
-                <input
-                  type="text"
-                  placeholder="Cari..."
-                  id="search"
-                  name="search"
-                  x-model="query"
-                  @keydown.enter.prevent="search()"
-                  class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 pl-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                />
-                <button
-                  @click="search()"
-                  class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
-                  aria-label="Search"
-                  type="button"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="w-5 h-5"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <!-- Table -->
-            <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] px-4 sm:px-6 mx-4 mt-4">
-              <div class="max-w-full overflow-x-auto">
-                <table class="min-w-full">
-                  <thead>
-                    <tr class="border-b border-gray-100 dark:border-gray-800">
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">No</p>
+@section('content')
+    <!-- Stats Cards (versi Kaiadmin) -->
+    <div class="row">
+        <div class="col-sm-6 col-md-6 col-lg-3">
+            <div class="card card-stats card-round">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-primary bubble-shadow-small">
+                                <i class="fas fa-boxes"></i>
+                            </div>
                         </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nomor SJN</p>
+                        <div class="col col-stats ms-3 ms-sm-0">
+                            <div class="numbers">
+                                <p class="card-category">Total Pengiriman</p>
+                                <h4 class="card-title">{{ $totalPengiriman }}</h4>
+                            </div>
                         </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Tanggal</p>
-                        </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Kepada</p>
-                        </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Proyek</p>
-                        </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p>
-                        </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p>
-                        </div>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody id="shipping-table-body" class="divide-y divide-gray-100 dark:divide-gray-800">
-                    @foreach($listTravelDocument as $index => $data)
-                      <tr>
-                        <td class="px-2 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ $index + $listTravelDocument->firstItem() }}</p>
-                        </td>
-                        <td class="px-5 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ $data->no_travel_document }}</p>
-                        </td>
-                        <td class="px-5 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ \Carbon\Carbon::parse($data->date_no_travel_document)->format('d/m/Y') }}</p>
-                        </td>
-                        <td class="px-5 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ $data->send_to }}</p>
-                        </td>
-                        <td class="px-5 py-4 sm:px-6">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ $data->project }}</p>
-                        </td>
-                        <td class="px-5 py-4 sm:px-6 whitespace-nowrap">
-                          <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ $data->status }}</p>
-                        </td>
-                        <td class="px-5 py-4 sm:px-6">
-                          <div class="flex space-x-2">
-                            <form action="{{ route('shippings.detail', ['id' => $data['id']]) }}" method="GET">
-                              <button type="submit" class="text-blue-600 dark:text-blue-400 hover:underline">detail</button>
-                            </form>
-                            <form action="{{ route('shippings.destroy', ['id' => $data['id']]) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus?');">
-                              @csrf
-                              @method('DELETE')
-                              <button type="submit" class="text-red-600 dark:text-red-400 hover:underline">Hapus</button>
-                            </form>
-                          </div>
-                        </td>
-                      </tr>
-                    @endforeach
-                  </tbody>
-                </table>
-
-                <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 dark:border-gray-800 dark:bg-white/[0.03]">
-                  <p class="text-sm text-gray-500 dark:text-gray-300 mb-2 sm:mb-0">
-                    Menampilkan {{ $listTravelDocument->firstItem() }} ke {{ $listTravelDocument->lastItem() }} dari total {{ $listTravelDocument->total() }} data
-                  </p>
-                  <div>
-                    {{ $listTravelDocument->links('pagination::tailwind') }}
-                  </div>
+                    </div>
                 </div>
-              </div>
             </div>
-          </div>
+        </div>
 
-          <!-- Export Modal -->
-          <div
-            x-show="showExportModal"
-            x-cloak
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-            style="display: none;"
-            @click="showExportModal = false"
-          >
-            <div
-              @click.stop
-              class="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800"
-            >
-              <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Export Data Pengiriman</h3>
-                <button
-                  type="button"
-                  @click="showExportModal = false"
-                  class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  aria-label="Close modal"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-
-              <form method="GET" action="{{ route('shippings.export') }}">
-                <div class="space-y-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Dari Tanggal</label>
-                    <input
-                      type="date"
-                      name="start_date"
-                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sampai Tanggal</label>
-                    <input
-                      type="date"
-                      name="end_date"
-                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                  </div>
-
-                  <div class="flex justify-end space-x-3 pt-2">
-                    <button
-                      type="button"
-                      @click="showExportModal = false"
-                      class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-500"
-                    >
-                      <img src="{{ asset('images/icons/export.svg') }}" alt="Export" class="h-4 w-4" />
-                      Export
-                    </button>
-                  </div>
+        <div class="col-sm-6 col-md-6 col-lg-3">
+            <div class="card card-stats card-round">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-warning bubble-shadow-small">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                        <div class="col col-stats ms-3 ms-sm-0">
+                            <div class="numbers">
+                                <p class="card-category">Belum Terkirim</p>
+                                <h4 class="card-title">{{ $totalBelumTerkirim }}</h4>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </form>
             </div>
-          </div>
-        </main>
-        <!-- ===== Main Content End ===== -->
-      </div>
-      <!-- ===== Content Area End ===== -->
+        </div>
+
+        <div class="col-sm-6 col-md-6 col-lg-3">
+            <div class="card card-stats card-round">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-info bubble-shadow-small">
+                                <i class="fas fa-shipping-fast"></i>
+                            </div>
+                        </div>
+                        <div class="col col-stats ms-3 ms-sm-0">
+                            <div class="numbers">
+                                <p class="card-category">Sedang Dikirim</p>
+                                <h4 class="card-title">{{ $totalSedangDikirim }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-md-6 col-lg-3">
+            <div class="card card-stats card-round">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-success bubble-shadow-small">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                        <div class="col col-stats ms-3 ms-sm-0">
+                            <div class="numbers">
+                                <p class="card-category">Terkirim</p>
+                                <h4 class="card-title">{{ $totalTerkirim }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <!-- ===== Page Wrapper End ===== -->
-  </body>
-</html>
+
+    <!-- Controls -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">Daftar Pengiriman</h4>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('shippings.add') }}" class="btn btn-primary btn-round">
+                            <i class="fas fa-plus me-1"></i> Tambah Pengiriman
+                        </a>
+                        <button type="button" class="btn btn-success btn-round" data-bs-toggle="modal"
+                            data-bs-target="#exportModal">
+                            <i class="fas fa-file-export me-1"></i> Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">Semua Status</option>
+                                <option value="Belum terkirim">Belum Terkirim</option>
+                                <option value="Sedang dikirim">Sedang Dikirim</option>
+                                <option value="Terkirim">Terkirim</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal"
+                                data-bs-target="#dateFilterModal">
+                                <i class="fas fa-calendar-alt me-1"></i> Filter Tanggal
+                                <span id="dateFilterBadge" class="badge bg-primary ms-1" style="display: none;">1</span>
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
+                                <input type="text" class="form-control" id="searchInput"
+                                    placeholder="Cari nomor SJN, tujuan, atau proyek..." />
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Active Filter Display -->
+                    <div id="activeFilters" class="mt-3" style="display: none;">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <small class="text-muted">Filter aktif:</small>
+                            <span id="dateRangeDisplay" class="badge bg-light text-dark border" style="display: none;">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                <span id="dateRangeText"></span>
+                                <button type="button" class="btn-close btn-close-sm ms-2" onclick="clearDateFilter()"
+                                    style="font-size: 0.6rem;"></button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="shippingsTable">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" width="60">No</th>
+                                    <th>Nomor SJN</th>
+                                    <th>Tanggal</th>
+                                    <th>Kepada</th>
+                                    <th>Proyek</th>
+                                    <th>Status</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($listTravelDocument as $index => $doc)
+                                    <tr class="shipping-row" data-status="{{ $doc->status }}"
+                                        data-date="{{ $doc->date_no_travel_document }}">
+                                        <td class="text-center text-muted">{{ $listTravelDocument->firstItem() + $index }}
+                                        </td>
+                                        <td>
+                                            <a href="{{ route('shippings.detail', $doc->id) }}"
+                                                class="text-primary fw-bold">
+                                                {{ $doc->no_travel_document ?: '-' }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">
+                                                @if ($doc->date_no_travel_document)
+                                                    {{ \Carbon\Carbon::parse($doc->date_no_travel_document)->format('d/m/Y') }}
+                                                @else
+                                                    -
+                                                @endif
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                                            {{ $doc->send_to ?: '-' }}
+                                        </td>
+                                        <td>{{ $doc->project ?: '-' }}</td>
+                                        <td>
+                                            @if ($doc->status == 'Belum terkirim')
+                                                <span class="badge badge-warning">Belum terkirim</span>
+                                            @elseif($doc->status == 'Sedang dikirim')
+                                                <span class="badge badge-info">Sedang dikirim</span>
+                                            @elseif($doc->status == 'Terkirim')
+                                                <span class="badge badge-success">Terkirim</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-button-action">
+                                                <a href="{{ route('shippings.detail', $doc->id) }}"
+                                                    class="btn btn-link btn-primary btn-lg" title="Detail">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-link btn-danger btn-lg"
+                                                    onclick="confirmDelete({{ $doc->id }})" title="Hapus">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center py-5">
+                                            <i class="fas fa-inbox fs-1 d-block mb-3 text-muted"></i>
+                                            <p class="mb-0 text-muted">Tidak ada data pengiriman</p>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        Menampilkan {{ $listTravelDocument->firstItem() ?? 0 }}–{{ $listTravelDocument->lastItem() ?? 0 }}
+                        dari {{ $listTravelDocument->total() }} data
+                    </small>
+                    <nav aria-label="Page navigation">
+                        {{ $listTravelDocument->onEachSide(1)->links('pagination::simple-bootstrap-5') }}
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@push('modals')
+    <!-- Date Filter Modal -->
+    <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-calendar-alt me-2"></i> Filter Rentang Tanggal
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tanggal Mulai</label>
+                        <input type="date" class="form-control" id="filterStartDate" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tanggal Akhir</label>
+                        <input type="date" class="form-control" id="filterEndDate" />
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Kosongkan untuk menampilkan semua tanggal.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-outline-danger" onclick="clearDateFilter()">
+                        <i class="fas fa-times me-1"></i> Reset
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="applyDateFilter()">
+                        <i class="fas fa-filter me-1"></i> Terapkan Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal fade" id="exportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ route('shippings.export') }}" method="GET">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-file-export me-2"></i> Export Data Pengiriman
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tanggal Mulai</label>
+                            <input type="date" class="form-control" name="start_date" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tanggal Akhir</label>
+                            <input type="date" class="form-control" name="end_date" />
+                        </div>
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Kosongkan tanggal untuk export semua data.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-file-excel me-1"></i> Export Excel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endpush
+
+@push('styles')
+    <style>
+
+    </style>
+@endpush
+
+@push('scripts')
+    <script>
+        let startDateFilter = '';
+        let endDateFilter = '';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+            const rows = document.querySelectorAll('.shipping-row');
+
+            function filterTable() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                const statusValue = statusFilter.value;
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const status = row.dataset.status;
+                    const rowDate = row.dataset.date;
+
+                    const matchesSearch = text.includes(searchTerm);
+                    const matchesStatus = !statusValue || status === statusValue;
+                    const matchesDate = checkDateRange(rowDate);
+
+                    row.style.display = (matchesSearch && matchesStatus && matchesDate) ? '' : 'none';
+                });
+            }
+
+            function checkDateRange(dateStr) {
+                if (!startDateFilter && !endDateFilter) return true;
+                if (!dateStr) return false;
+
+                const rowDate = new Date(dateStr);
+                const start = startDateFilter ? new Date(startDateFilter) : null;
+                const end = endDateFilter ? new Date(endDateFilter) : null;
+
+                if (start && end) {
+                    return rowDate >= start && rowDate <= end;
+                } else if (start) {
+                    return rowDate >= start;
+                } else if (end) {
+                    return rowDate <= end;
+                }
+                return true;
+            }
+
+            searchInput.addEventListener('input', filterTable);
+            statusFilter.addEventListener('change', filterTable);
+
+            // Expose filterTable globally
+            window.filterTable = filterTable;
+        });
+
+        function applyDateFilter() {
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+
+            startDateFilter = startDate;
+            endDateFilter = endDate;
+
+            // Update UI
+            updateDateFilterDisplay();
+
+            // Apply filter
+            window.filterTable();
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('dateFilterModal'));
+            modal.hide();
+        }
+
+        function clearDateFilter() {
+            startDateFilter = '';
+            endDateFilter = '';
+
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+
+            updateDateFilterDisplay();
+            window.filterTable();
+
+            // Close modal if open
+            const modalElement = document.getElementById('dateFilterModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        }
+
+        function updateDateFilterDisplay() {
+            const badge = document.getElementById('dateFilterBadge');
+            const activeFilters = document.getElementById('activeFilters');
+            const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+            const dateRangeText = document.getElementById('dateRangeText');
+
+            if (startDateFilter || endDateFilter) {
+                badge.style.display = 'inline-block';
+                activeFilters.style.display = 'block';
+                dateRangeDisplay.style.display = 'inline-flex';
+
+                let displayText = '';
+                if (startDateFilter && endDateFilter) {
+                    displayText = `${formatDate(startDateFilter)} - ${formatDate(endDateFilter)}`;
+                } else if (startDateFilter) {
+                    displayText = `Dari ${formatDate(startDateFilter)}`;
+                } else if (endDateFilter) {
+                    displayText = `Sampai ${formatDate(endDateFilter)}`;
+                }
+                dateRangeText.textContent = displayText;
+            } else {
+                badge.style.display = 'none';
+                activeFilters.style.display = 'none';
+                dateRangeDisplay.style.display = 'none';
+            }
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        function confirmDelete(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus data pengiriman ini?')) {
+                const form = document.getElementById('deleteForm');
+                form.action = `/shippings/${id}`;
+                form.submit();
+            }
+        }
+    </script>
+@endpush

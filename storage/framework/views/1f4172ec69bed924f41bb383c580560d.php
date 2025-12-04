@@ -1,312 +1,299 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
-    />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>
-      Manajemen Pengiriman | Rekatrack
-    </title>
-  </head>
-  <?php echo app('Illuminate\Foundation\Vite')('resources/css/app.css'); ?>
-  <?php echo app('Illuminate\Foundation\Vite')('resources/js/app.js'); ?>
-  <body
-    x-data="{ page: 'ecommerce', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false }"
-    x-init="
-         darkMode = JSON.parse(localStorage.getItem('darkMode'));
-         $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
-    :class="{'dark bg-gray-900': darkMode === true}"
-  >
-    <!-- ===== Preloader Start ===== -->
-    <?php echo $__env->make('partials.preloader', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-    <!-- ===== Preloader End ===== -->
+<?php $__env->startSection('title', 'Tambah Pengiriman | RekaTrack'); ?>
+<?php ($pageName = 'Tambah Data Pengiriman'); ?>
 
-    <!-- ===== Page Wrapper Start ===== -->
-    <div class="flex h-screen overflow-hidden">
-      <!-- ===== Sidebar Start ===== -->
-      <?php echo $__env->make('Template.sidebar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-      <!-- ===== Sidebar End ===== -->
-
-      <!-- ===== Content Area Start ===== -->
-      <div
-        class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto"
-      >
-        <!-- Small Device Overlay Start -->
-        <?php echo $__env->make('partials.overlay', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-        <!-- Small Device Overlay End -->
-
-        <!-- ===== Header Start ===== -->
-        <?php echo $__env->make('Template.header', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-        <!-- ===== Header End ===== -->
-
-        <!-- ===== Main Content Start ===== -->
-        <main>
-          <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-            <div x-data="{
-                pageName: 'Manajemen Pengiriman',
-                subPageName: 'Tambah Data Pengiriman'}">
-              <?php echo $__env->make('Template.breadcrumb', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-            </div>
-
-            <div>
-              <form method="POST" action="<?php echo e(route('shippings.store')); ?>">
-              <?php echo csrf_field(); ?>
-              <div class="space-y-6">
-                <div
-                  class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-                  <div class="px-5 py-4 sm:px-6 sm:py-5">
-                    <h3
-                      class="text-base font-medium text-gray-800 dark:text-white/90">
-                      Data pengiriman
-                    </h3>
-                  </div>
-                  <div class="space-y-6 border-t border-gray-100 p-5 sm:p-6 dark:border-gray-800">
-                      <!-- Create a grid layout for label and input -->
-                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Column 1 -->
-                        <div class="flex items-center space-x-4">
-                          <label for="sendTo" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Kepada <p class="text-red-500 inline">*</p></label>
-                          <input
-                            type="text"
-                            id="sendTo"
-                            name="sendTo"
-                            value="<?php echo e(old('sendTo')); ?>"
-                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                          />
-                        </div>
-
-                        <!-- Column 2 -->
-                        <div class="flex items-center space-x-4">
-                          <label for="numberSJN" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Nomor SJN <p class="text-red-500 inline">*</p></label>
-                          <input
-                            type="text"
-                            id="numberSJN"
-                            name="numberSJN"
-                            value="<?php echo e(old('numberSJN')); ?>"
-                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                          />
-                        </div>
-
-                        <!-- Column 3 -->
-                        <div class="flex items-center space-x-4">
-                          <label for="numberRef" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Nomor Ref <p class="text-red-500 inline">*</p></label>
-                          <input
-                            type="text"
-                            id="numberRef"
-                            name="numberRef"
-                            value="<?php echo e(old('numberRef')); ?>"
-                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                          />
-                        </div>
-
-                        <!-- Column 4 -->
-                        <div class="flex items-center space-x-4">
-                          <label for="projectName" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Proyek <p class="text-red-500 inline">*</p></label>
-                          <input
-                            type="text"
-                            id="projectName"
-                            name="projectName"
-                            value="<?php echo e(old('projectName')); ?>"
-                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                          />
-                        </div>
-
-                        <!-- Column 5 -->
-                        <div class="flex items-center space-x-4">
-                          <label for="poNumber" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Nomor PO <p class="text-red-500 inline">*</p></label>
-                          <input
-                            type="text"
-                            id="poNumber"
-                            name="poNumber"
-                            value="<?php echo e(old('poNumber')); ?>"
-                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                          />
-                        </div>
-                      </div>
-                  </div>
-                </div>
-              </div>
-
-              <?php
-                  $oldForms = [];
-                  if (old('itemCode')) {
-                      foreach (old('itemCode') as $index => $itemCode) {
-                          $oldForms[] = [
-                              'itemCode' => old("itemCode.$index"),
-                              'itemName' => old("itemName.$index"),
-                              'quantitySend' => old("quantitySend.$index"),
-                              'unitType' => old("unitType.$index"),
-                              'description' => old("description.$index"),
-                              'totalSend' => old("totalSend.$index"),
-                              'information' => old("information.$index"),
-                              'qtyPreOrder' => old("qtyPreOrder.$index"),
-                          ];
-                      }
-                  }
-              ?>
-
-              <div class="space-y-6">
-                <div
-                  x-data="{
-                    totalBarang: <?php echo e(count($oldForms) > 0 ? count($oldForms) : 1); ?>,
-                    forms: <?php echo e(json_encode(count($oldForms) > 0 ? $oldForms : [['itemName'=>'', 'itemCode'=>'', 'quantitySend'=>'', 'unitType'=>'', 'description'=>'', 'totalSend'=>'', 'information'=>'', 'qtyPreOrder'=>'']])); ?>
-
-                  }"
-                  class="py-4"
-                >
-                  <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-                    <div class="px-5 py-4 sm:px-6 sm:py-5 flex flex-inline justify-between">
-                      <h3 class="text-base font-medium text-gray-800 dark:text-white/90">
-                        Data barang pengiriman
-                      </h3>
-                      <h3 class="text-base font-medium text-gray-800 dark:text-white/90">
-                        Total barang: <span x-text="totalBarang"></span>
-                      </h3>
-                    </div>
-
-                    <div class="space-y-6 border-t border-gray-100 p-5 sm:p-6 dark:border-gray-800">
-                        <template x-for="(form, index) in forms" x-bind:key="index">
-                          <div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
-                              <!-- Column 0 -->
-                              <div class="flex items-center space-x-4">
-                                <label for="itemName" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Nama barang <p class="text-red-500 inline">*</p></label>
-                                <input
-                                  type="text"
-                                  x-model="form.itemName"
-                                  id="itemName"
-                                  name="itemName[]"
-                                  class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                              </div>
-
-                              <!-- Column 1 -->
-                              <div class="flex items-center space-x-4">
-                                <label for="itemCode" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Kode barang <p class="text-red-500 inline">*</p></label>
-                                <input
-                                  type="text"
-                                  x-model="form.itemCode"
-                                  id="itemCode"
-                                  name="itemCode[]"
-                                  class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                              </div>
-
-                              <!-- Column 3 -->
-                              <div class="flex items-center space-x-4">
-                                <label for="unitType" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Satuan <p class="text-red-500 inline">*</p></label>
-                                <select
-                                  x-model="form.unitType"
-                                  name="unitType[]"
-                                  class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                                >
-                                  <option value="">--pilih satuan--</option>
-                                  <?php $__currentLoopData = $units; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $unit): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($unit->id); ?>"><?php echo e($unit->name); ?></option>
-                                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                </select>
-                              </div>
-
-
-                              <!-- Column 2 -->
-                              <div class="flex items-center space-x-4">
-                                <label for="quantitySend" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Qty Kirim <p class="text-red-500 inline">*</p></label>
-                                <input
-                                  type="number"
-                                  x-model="form.quantitySend"
-                                  id="quantitySend"
-                                  name="quantitySend[]"
-                                  class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                              </div>
-
-                                <!-- Colum 7 -->
-                                <div class="flex items-center space-x-4">
-                                <label for="qtyPreOrder" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Qty PO <p class="text-red-500 inline">*</p></label>
-                                <input
-                                  type="number"
-                                  x-model="form.qtyPreOrder"
-                                  id="qtyPreOrder"
-                                  name="qtyPreOrder[]"
-                                  class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                              </div>
-
-                              <!-- Column 5 -->
-                              <div class="flex items-center space-x-4">
-                                <label for="totalSend" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Total Kirim <p class="text-red-500 inline">*</p></label>
-                                <input
-                                  type="number"
-                                  x-model="form.totalSend"
-                                  id="totalSend"
-                                  name="totalSend[]"
-                                  class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                              </div>
-
-                              <!-- Column 4 -->
-                              <div class="flex items-start space-x-4">
-                                <label for="description" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Deskripsi <p class="text-red-500 inline">*</p></label>
-                                <input
-                                  type="text"
-                                  x-model="form.description"
-                                  id="description"
-                                  name="description[]"
-                                  class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-full w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                              </div>
-
-                              <!-- Column 6 -->
-                              <div class="flex items-start space-x-4">
-                                <label for="information" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Keterangan </label>
-                                <input
-                                  type="text"
-                                  x-model="form.information"
-                                  id="information"
-                                  name="information[]"
-                                  class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-full w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                              </div>
-
-                              <div class="flex justify-end space-x-4">
-                                <button type="button" @click="forms.splice(index, 1); totalBarang--"
-                                  :class="forms.length <= 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-400'"
-                                  :disabled="forms.length <= 1"
-                                  class="rounded-md text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                                  Hapus Item
-                                </button>
-                              </div>
-                            </div>
-                            <hr class="border-t border-gray-300 dark:border-gray-800 mt-2" />
-
-                          </div>
-
-                        </template>
-
-                        <div class="justify-end flex space-x-4">
-                          <button type="button" @click="if (forms.length < 50) { forms.push({ itemName:'', itemCode: '', quantitySend: '', unitType: '', description: '', totalSend: '', information: '', qtyPreOrder:'' }); totalBarang++ }" :class="forms.length >= 50 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-400'" :disabled="forms.length >= 50" class="rounded-md text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                            Tambah Item
-                          </button>
-
-                          <button type="submit" :class="forms.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-400'" :disabled="forms.length === 0" class="rounded-md text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                            Submit
-                          </button>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </form>
-
-        </main>
-        <!-- ===== Main Content End ===== -->
+<?php $__env->startSection('content'); ?>
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title mb-0">Form Pengiriman Baru</h4>
       </div>
-      <!-- ===== Content Area End ===== -->
+      <div class="card-body">
+        <form method="POST" action="<?php echo e(route('shippings.store')); ?>" id="shippingForm">
+          <?php echo csrf_field(); ?>
+
+          <!-- Nomor SJN di atas (prioritas utama) -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Nomor SJN <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                name="numberSJN"
+                value="<?php echo e(old('numberSJN')); ?>"
+                class="form-control form-control-lg"
+                placeholder="Masukkan nomor surat jalan"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Data Pengiriman Lain -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Kepada <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                name="sendTo"
+                value="<?php echo e(old('sendTo')); ?>"
+                class="form-control"
+                placeholder="Nama penerima"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nomor Ref <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                name="numberRef"
+                value="<?php echo e(old('numberRef')); ?>"
+                class="form-control"
+                placeholder="Nomor referensi"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Proyek <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                name="projectName"
+                value="<?php echo e(old('projectName')); ?>"
+                class="form-control"
+                placeholder="Nama proyek"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nomor PO <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                name="poNumber"
+                value="<?php echo e(old('poNumber')); ?>"
+                class="form-control"
+                placeholder="Nomor purchase order"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Bagian Barang -->
+          <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">Data Barang</h5>
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-muted">Total: <span id="totalBarang">1</span> item</span>
+                <button type="button" class="btn btn-primary btn-sm" id="addItemBtn">
+                  <i class="fas fa-plus me-1"></i> Tambah Barang
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="itemsContainer">
+                <?php $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                  <div class="item-row mb-4 p-3 bg-light rounded">
+                    <div class="row g-3">
+                      <div class="col-md-3">
+                        <label class="form-label">Nama Barang <span class="text-danger">*</span></label>
+                        <input
+                          type="text"
+                          name="itemName[]"
+                          value="<?php echo e(old("itemName.$index", $item['itemName'])); ?>"
+                          class="form-control"
+                          placeholder="Contoh: Baut M10"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">Kode Barang <span class="text-danger">*</span></label>
+                        <input
+                          type="text"
+                          name="itemCode[]"
+                          value="<?php echo e(old("itemCode.$index", $item['itemCode'])); ?>"
+                          class="form-control"
+                          placeholder="SKU/Part No"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">Satuan <span class="text-danger">*</span></label>
+                        <select name="unitType[]" class="form-select" required>
+                          <option value="">-- pilih --</option>
+                          <?php $__currentLoopData = $units; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $unit): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($unit->id); ?>" <?php echo e(old("unitType.$index", $item['unitType']) == $unit->id ? 'selected' : ''); ?>>
+                              <?php echo e($unit->name); ?>
+
+                            </option>
+                          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                      </div>
+                      <div class="col-md-1">
+                        <label class="form-label">Qty Kirim</label>
+                        <input
+                          type="number"
+                          name="quantitySend[]"
+                          value="<?php echo e(old("quantitySend.$index", $item['quantitySend'])); ?>"
+                          class="form-control"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div class="col-md-1">
+                        <label class="form-label">Qty PO</label>
+                        <input
+                          type="number"
+                          name="qtyPreOrder[]"
+                          value="<?php echo e(old("qtyPreOrder.$index", $item['qtyPreOrder'])); ?>"
+                          class="form-control"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">Total Kirim <span class="text-danger">*</span></label>
+                        <input
+                          type="number"
+                          name="totalSend[]"
+                          value="<?php echo e(old("totalSend.$index", $item['totalSend'])); ?>"
+                          class="form-control"
+                          placeholder="0"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">Deskripsi <span class="text-danger">*</span></label>
+                        <input
+                          type="text"
+                          name="description[]"
+                          value="<?php echo e(old("description.$index", $item['description'])); ?>"
+                          class="form-control"
+                          placeholder="Spesifikasi barang"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">Keterangan</label>
+                        <input
+                          type="text"
+                          name="information[]"
+                          value="<?php echo e(old("information.$index", $item['information'])); ?>"
+                          class="form-control"
+                          placeholder="Opsional"
+                        />
+                      </div>
+                      <div class="col-md-12 d-flex justify-content-end mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-item"
+                          <?php echo e(count($items) <= 1 ? 'disabled' : ''); ?>>
+                          <i class="fas fa-trash me-1"></i> Hapus
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+              </div>
+            </div>
+          </div>
+
+          <!-- Aksi Bawah -->
+          <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <a href="<?php echo e(route('shippings.index')); ?>" class="btn btn-light">
+              <i class="fas fa-arrow-left me-1"></i> Batal
+            </a>
+            <button type="submit" class="btn btn-success btn-round">
+              <i class="fas fa-save me-1"></i> Simpan Pengiriman
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-    <!-- ===== Page Wrapper End ===== -->
-  </body>
-</html>
-<?php /**PATH /home/server/Reka/current-rekatrack/current/resources/views/General/shippings-add.blade.php ENDPATH**/ ?>
+  </div>
+</div>
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById('itemsContainer');
+    const addItemBtn = document.getElementById('addItemBtn');
+    let itemCount = <?php echo e(count($items)); ?>;
+    const units = <?php echo json_encode($units, 15, 512) ?>;
+
+    function getUnitOptions() {
+      let html = '<option value="">-- pilih --</option>';
+      units.forEach(unit => {
+        html += `<option value="${unit.id}">${unit.name}</option>`;
+      });
+      return html;
+    }
+
+    function createNewItemRow() {
+      return `
+        <div class="item-row mb-4 p-3 bg-light rounded">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Nama Barang <span class="text-danger">*</span></label>
+              <input type="text" name="itemName[]" class="form-control" placeholder="Contoh: Baut M10" required />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Kode Barang <span class="text-danger">*</span></label>
+              <input type="text" name="itemCode[]" class="form-control" placeholder="SKU/Part No" required />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Satuan <span class="text-danger">*</span></label>
+              <select name="unitType[]" class="form-select" required>
+                ${getUnitOptions()}
+              </select>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label">Qty Kirim</label>
+              <input type="number" name="quantitySend[]" class="form-control" placeholder="0" />
+            </div>
+            <div class="col-md-1">
+              <label class="form-label">Qty PO</label>
+              <input type="number" name="qtyPreOrder[]" class="form-control" placeholder="0" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Total Kirim <span class="text-danger">*</span></label>
+              <input type="number" name="totalSend[]" class="form-control" placeholder="0" required />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Deskripsi <span class="text-danger">*</span></label>
+              <input type="text" name="description[]" class="form-control" placeholder="Spesifikasi barang" required />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Keterangan</label>
+              <input type="text" name="information[]" class="form-control" placeholder="Opsional" />
+            </div>
+            <div class="col-md-12 d-flex justify-content-end mt-2">
+              <button type="button" class="btn btn-sm btn-outline-danger remove-item">
+                <i class="fas fa-trash me-1"></i> Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateTotalBarang() {
+      document.getElementById('totalBarang').textContent = container.querySelectorAll('.item-row').length;
+    }
+
+    addItemBtn.addEventListener('click', function () {
+      if (itemCount >= 50) return;
+      container.insertAdjacentHTML('beforeend', createNewItemRow());
+      itemCount++;
+      updateTotalBarang();
+    });
+
+    container.addEventListener('click', function (e) {
+      if (e.target.closest('.remove-item')) {
+        const row = e.target.closest('.item-row');
+        if (container.querySelectorAll('.item-row').length > 1) {
+          row.remove();
+          updateTotalBarang();
+        }
+      }
+    });
+
+    updateTotalBarang();
+  });
+</script>
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /home/server/Reka/current-rekatrack/current/resources/views/General/shippings-add.blade.php ENDPATH**/ ?>

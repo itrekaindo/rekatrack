@@ -1,319 +1,299 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
-    />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>
-      Manajemen Pengguna | Rekatrack
-    </title>
-  </head>
-  @vite('resources/css/app.css')
-  @vite('resources/js/app.js')
-  <body
-    x-data="{ page: 'ecommerce', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false }"
-    x-init="
-         darkMode = JSON.parse(localStorage.getItem('darkMode'));
-         $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
-    :class="{'dark bg-gray-900': darkMode === true}"
-  >
-    <!-- ===== Preloader Start ===== -->
-    @include('partials.preloader')
-    <!-- ===== Preloader End ===== -->
+@extends('layouts.app')
 
-    <!-- ===== Page Wrapper Start ===== -->
-    <div class="flex h-screen overflow-hidden">
-      <!-- ===== Sidebar Start ===== -->
-      @include('Template.sidebar')
-      <!-- ===== Sidebar End ===== -->
+@section('title', 'Edit Pengiriman - RekaTrack')
+@php($pageName = 'Edit Pengiriman ' . ($travelDocument->no_travel_document ?? ''))
 
-      <!-- ===== Content Area Start ===== -->
-      <div
-        class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto"
-      >
-        <!-- Small Device Overlay Start -->
-        @include('partials.overlay')
-        <!-- Small Device Overlay End -->
+@section('content')
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title mb-0">Edit Data Pengiriman</h4>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ route('shippings.update', $travelDocument->id) }}" id="editShippingForm">
+          @csrf
+          @method('PUT')
 
-        <!-- ===== Header Start ===== -->
-        @include('Template.header')
-        <!-- ===== Header End ===== -->
-
-        <!-- ===== Main Content Start ===== -->
-        <main>
-          <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-            <div x-data="{ 
-                pageName: 'Manajemen Pengiriman', 
-                subPageName: 'Edit Data Pengiriman'}">
-              @include('Template.breadcrumb')
-            </div>
-
-            <div>
-            <form method="POST" action="{{ route('shippings.update', $travelDocument->id) }}">
-                @csrf
-                @method('PUT')
-                <div x-data="{
-                    sendTo: '{{ $travelDocument->send_to }}',
-                    numberSJN: '{{ $travelDocument->no_travel_document }}',
-                    numberRef: '{{ $travelDocument->reference_number }}',
-                    projectName: '{{ $travelDocument->project }}',
-                    poNumber: '{{ $travelDocument->po_number }}'
-                }" class="space-y-6">
-
-                <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-                    <div class="px-5 py-4 sm:px-6 sm:py-5">
-                        <h3 class="text-base font-medium text-gray-800 dark:text-white/90">
-                            Data pengiriman
-                        </h3>
-                    </div>
-
-                    <div class="space-y-6 border-t border-gray-100 p-5 sm:p-6 dark:border-gray-800">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <!-- Column 1 -->
-                            <div class="flex items-center space-x-4">
-                                <label for="sendTo" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Kepada <p class="text-red-500 inline">*</p></label>
-                                <input
-                                    type="text"
-                                    x-model="sendTo"
-                                    id="sendTo"
-                                    name="sendTo"
-                                    :value="sendTo"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                            </div>
-
-                            <!-- Column 2 -->
-                            <div class="flex items-center space-x-4">
-                                <label for="numberSJN" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Nomor SJN <p class="text-red-500 inline">*</p></label>
-                                <input
-                                    type="text"
-                                    x-model="numberSJN"
-                                    id="numberSJN"
-                                    name="numberSJN"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                            </div>
-
-                            <!-- Column 3 -->
-                            <div class="flex items-center space-x-4">
-                                <label for="numberRef" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Nomor Ref <p class="text-red-500 inline">*</p></label>
-                                <input
-                                    type="text"
-                                    x-model="numberRef"
-                                    id="numberRef"
-                                    name="numberRef"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                            </div>
-
-                            <!-- Column 4 -->
-                            <div class="flex items-center space-x-4">
-                                <label for="projectName" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Proyek <p class="text-red-500 inline">*</p></label>
-                                <input
-                                    type="text"
-                                    x-model="projectName"
-                                    id="projectName"
-                                    name="projectName"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                            </div>
-
-                            <!-- Column 5 -->
-                            <div class="flex items-center space-x-4">
-                                <label for="poNumber" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Nomor PO <p class="text-red-500 inline">*</p></label>
-                                <input
-                                    type="text"
-                                    x-model="poNumber"
-                                    id="poNumber"
-                                    name="poNumber"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                </div>  
-
-                
-                <!-- BAGIAN ITEM BARANG -->
-                <div class="space-y-6 mt-4">
-                <div x-data="{
-                        totalBarang: {{ count($travelDocument->items) }},
-                        forms: {{ Js::from($travelDocument->items->map(function($item) {
-                        return [
-                            'itemName' => $item->item_name,
-                            'itemCode' => $item->item_code,
-                            'quantitySend' => $item->qty_send,
-                            'unitType' => trim(optional($item->unit)->name ?? ''),
-                            'description' => $item->description,
-                            'totalSend' => $item->total_send,
-                            'information' => $item->information,
-                            'qtyPreOrder' => $item->qty_po
-                        ];
-                    })) }},
-                         unitOptions: {{ Js::from($units->map(fn($u) => ['id' => $u->id, 'name' => $u->name])) }},
-                }"
-                x-init="
-    console.log('unitOptions:', unitOptions);
-    console.log('forms:', forms);
-    ">
-
-                    <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-                        <div class="px-5 py-4 sm:px-6 sm:py-5 flex flex-inline justify-between">
-                        <h3 class="text-base font-medium text-gray-800 dark:text-white/90">
-                            Data barang pengiriman
-                        </h3>
-                        <h3 class="text-base font-medium text-gray-800 dark:text-white/90">
-                            Total barang: <span x-text="totalBarang"></span>
-                        </h3>
-                        </div>
-                  
-                        <div class="space-y-6 border-t border-gray-100 p-5 sm:p-6 dark:border-gray-800">
-                            <template x-for="(form, index) in forms" x-bind:key="index">
-                            <div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
-                                <!-- Column 0 -->
-                                <div class="flex items-center space-x-4">
-                                    <label for="itemName" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Nama barang <p class="text-red-500 inline">*</p></label>
-                                    <input
-                                    type="text"
-                                    x-model="form.itemName"
-                                    id="itemName"
-                                    name="itemName[]"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                    />
-                                </div>
-
-                                <!-- Column 1 -->
-                                <div class="flex items-center space-x-4">
-                                    <label for="itemCode" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Kode barang <p class="text-red-500 inline">*</p></label>
-                                    <input
-                                    type="text"
-                                    x-model="form.itemCode"
-                                    id="itemCode"
-                                    name="itemCode[]"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                    />
-                                </div>
-
-                                <!-- Column 3 -->
-                                <div class="flex items-center space-x-4"> 
-                                    <label for="unitType" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Satuan <p class="text-red-500 inline">*</p></label>
-                                    <select
-                                    x-model="forms[index].unitType"
-                                    name="unitType[]"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                >
-                                
-                                    <option value="">-- Pilih Satuan --</option>
-                                    <template x-for="unit in unitOptions" :key="unit.id">
-                                        <option 
-                                            :value="unit.id" 
-                                            x-text="unit.name" 
-                                            :selected="forms[index].unitType === unit.name"
-                                            >
-                                        </option>
-                                    </template>
-                                </select>
-                            </div>
-
-                                <!-- Column 2 -->
-                                <div class="flex items-center space-x-4">
-                                    <label for="quantitySend" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Qty Kirim <p class="text-red-500 inline">*</p></label>
-                                    <input
-                                    type="number"
-                                    x-model="form.quantitySend"
-                                    id="quantitySend"
-                                    name="quantitySend[]"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                    />
-                                </div>
-
-                                    <!-- Colum 7 -->
-                                    <div class="flex items-center space-x-4">
-                                    <label for="qtyPreOrder" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Qty PO <p class="text-red-500 inline">*</p></label>
-                                    <input
-                                    type="number"
-                                    x-model="form.qtyPreOrder"
-                                    id="qtyPreOrder"
-                                    name="qtyPreOrder[]"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                    />
-                                </div>
-
-                                <!-- Column 5 -->
-                                <div class="flex items-center space-x-4">
-                                    <label for="totalSend" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Total Kirim <p class="text-red-500 inline">*</p></label>
-                                    <input
-                                    type="number"
-                                    x-model="form.totalSend"
-                                    id="totalSend"
-                                    name="totalSend[]"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                    />
-                                </div>
-
-                                <!-- Column 4 -->
-                                <div class="flex items-center space-x-4">
-                                    <label for="description" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Deskripsi <p class="text-red-500 inline">*</p></label>
-                                    <input
-                                    type="text"
-                                    x-model="form.description"
-                                    id="description"
-                                    name="description[]"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-full w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                    />
-                                </div>
-
-                                <!-- Column 6 -->
-                                <div class="flex items-center space-x-4">
-                                    <label for="information" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 w-1/3">Keterangan</label>
-                                    <input
-                                    type="text"
-                                    x-model="form.information"
-                                    id="information"
-                                    name="information[]"
-                                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-full w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                                    />
-                                </div>
-                                
-                                <!-- <div class="flex justify-end space-x-4">
-                                    <button type="button" @click="forms.splice(index, 1); totalBarang--"
-                                    :class="forms.length <= 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-400'"
-                                    :disabled="forms.length <= 1"
-                                    class="rounded-md text-white px-3.5 py-2.5 text-sm font-semibold shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                                    Hapus Item
-                                    </button>
-                                </div> -->
-                                
-                                </div>
-                                <hr class="border-t border-gray-300 dark:border-gray-800 mt-2" />
-                                
-                            </div>
-                            
-                            </template>
-
-                            <div class="justify-end flex space-x-4">
-                                <button type="submit" class="bg-green-500 hover:bg-green-400 text-white rounded-md px-3.5 py-2.5 text-sm font-semibold shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                                Simpan Perubahan
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-            </form>
+          <!-- Nomor SJN di atas (prioritas utama) -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Nomor SJN <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                name="numberSJN"
+                value="{{ old('numberSJN', $travelDocument->no_travel_document) }}"
+                class="form-control form-control-lg"
+                placeholder="Masukkan nomor surat jalan"
+                required
+              />
             </div>
           </div>
 
-        </main>
-        <!-- ===== Main Content End ===== -->
+          <!-- Data pengiriman lain -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Kepada <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                name="sendTo"
+                value="{{ old('sendTo', $travelDocument->send_to) }}"
+                class="form-control"
+                placeholder="Nama penerima"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nomor Ref <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                name="numberRef"
+                value="{{ old('numberRef', $travelDocument->reference_number) }}"
+                class="form-control"
+                placeholder="Nomor referensi"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Proyek <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                name="projectName"
+                value="{{ old('projectName', $travelDocument->project) }}"
+                class="form-control"
+                placeholder="Nama proyek"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nomor PO <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                name="poNumber"
+                value="{{ old('poNumber', $travelDocument->po_number) }}"
+                class="form-control"
+                placeholder="Nomor purchase order"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Bagian Barang -->
+          <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">Data Barang</h5>
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-muted">Total: <span id="totalBarang">{{ count($items) }}</span> item</span>
+                <button type="button" class="btn btn-primary btn-sm" id="addItemBtn">
+                  <i class="fas fa-plus me-1"></i> Tambah Barang
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="itemsContainer">
+                @foreach ($items as $index => $item)
+                  <div class="item-row mb-4 p-3 bg-light rounded">
+                    <div class="row g-3">
+                      <div class="col-md-3">
+                        <label class="form-label">Nama Barang <span class="text-danger">*</span></label>
+                        <input
+                          type="text"
+                          name="itemName[]"
+                          value="{{ $item['itemName'] }}"
+                          class="form-control"
+                          placeholder="Contoh: Baut M10"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">Kode Barang <span class="text-danger">*</span></label>
+                        <input
+                          type="text"
+                          name="itemCode[]"
+                          value="{{ $item['itemCode'] }}"
+                          class="form-control"
+                          placeholder="SKU/Part No"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">Satuan <span class="text-danger">*</span></label>
+                        <select name="unitType[]" class="form-select" required>
+                          <option value="">-- pilih --</option>
+                          @foreach ($units as $unit)
+                            <option value="{{ $unit->id }}" {{ $item['unitType'] == $unit->id ? 'selected' : '' }}>
+                              {{ $unit->name }}
+                            </option>
+                          @endforeach
+                        </select>
+                      </div>
+                      <div class="col-md-1">
+                        <label class="form-label">Qty Kirim</label>
+                        <input
+                          type="number"
+                          name="quantitySend[]"
+                          value="{{ $item['quantitySend'] }}"
+                          class="form-control"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div class="col-md-1">
+                        <label class="form-label">Qty PO</label>
+                        <input
+                          type="number"
+                          name="qtyPreOrder[]"
+                          value="{{ $item['qtyPreOrder'] }}"
+                          class="form-control"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">Total Kirim <span class="text-danger">*</span></label>
+                        <input
+                          type="number"
+                          name="totalSend[]"
+                          value="{{ $item['totalSend'] }}"
+                          class="form-control"
+                          placeholder="0"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">Deskripsi <span class="text-danger">*</span></label>
+                        <input
+                          type="text"
+                          name="description[]"
+                          value="{{ $item['description'] }}"
+                          class="form-control"
+                          placeholder="Spesifikasi barang"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">Keterangan</label>
+                        <input
+                          type="text"
+                          name="information[]"
+                          value="{{ $item['information'] }}"
+                          class="form-control"
+                          placeholder="Opsional"
+                        />
+                      </div>
+                      <div class="col-md-12 d-flex justify-content-end mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-item"
+                          {{ count($items) <= 1 ? 'disabled' : '' }}>
+                          <i class="fas fa-trash me-1"></i> Hapus
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                @endforeach
+              </div>
+            </div>
+          </div>
+
+          <!-- Aksi Bawah -->
+          <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <a href="{{ route('shippings.index') }}" class="btn btn-light">
+              <i class="fas fa-arrow-left me-1"></i> Batal
+            </a>
+            <button type="submit" class="btn btn-success btn-round">
+              <i class="fas fa-save me-1"></i> Simpan Perubahan
+            </button>
+          </div>
+        </form>
       </div>
-      <!-- ===== Content Area End ===== -->
     </div>
-    <!-- ===== Page Wrapper End ===== -->
-  </body>
-</html>
+  </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById('itemsContainer');
+    const addItemBtn = document.getElementById('addItemBtn');
+    let itemCount = {{ count($items) }};
+    const units = @json($units);
+
+    function getUnitOptions() {
+      let html = '<option value="">-- pilih --</option>';
+      units.forEach(unit => {
+        html += `<option value="${unit.id}">${unit.name}</option>`;
+      });
+      return html;
+    }
+
+    function createNewItemRow() {
+      return `
+        <div class="item-row mb-4 p-3 bg-light rounded">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Nama Barang <span class="text-danger">*</span></label>
+              <input type="text" name="itemName[]" class="form-control" placeholder="Contoh: Baut M10" required />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Kode Barang <span class="text-danger">*</span></label>
+              <input type="text" name="itemCode[]" class="form-control" placeholder="SKU/Part No" required />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Satuan <span class="text-danger">*</span></label>
+              <select name="unitType[]" class="form-select" required>
+                ${getUnitOptions()}
+              </select>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label">Qty Kirim</label>
+              <input type="number" name="quantitySend[]" class="form-control" placeholder="0" />
+            </div>
+            <div class="col-md-1">
+              <label class="form-label">Qty PO</label>
+              <input type="number" name="qtyPreOrder[]" class="form-control" placeholder="0" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Total Kirim <span class="text-danger">*</span></label>
+              <input type="number" name="totalSend[]" class="form-control" placeholder="0" required />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Deskripsi <span class="text-danger">*</span></label>
+              <input type="text" name="description[]" class="form-control" placeholder="Spesifikasi barang" required />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Keterangan</label>
+              <input type="text" name="information[]" class="form-control" placeholder="Opsional" />
+            </div>
+            <div class="col-md-12 d-flex justify-content-end mt-2">
+              <button type="button" class="btn btn-sm btn-outline-danger remove-item">
+                <i class="fas fa-trash me-1"></i> Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateTotalBarang() {
+      document.getElementById('totalBarang').textContent = container.querySelectorAll('.item-row').length;
+    }
+
+    addItemBtn.addEventListener('click', function () {
+      if (itemCount >= 50) return;
+      container.insertAdjacentHTML('beforeend', createNewItemRow());
+      itemCount++;
+      updateTotalBarang();
+    });
+
+    container.addEventListener('click', function (e) {
+      if (e.target.closest('.remove-item')) {
+        const row = e.target.closest('.item-row');
+        if (container.querySelectorAll('.item-row').length > 1) {
+          row.remove();
+          updateTotalBarang();
+        }
+      }
+    });
+
+    updateTotalBarang();
+  });
+</script>
+@endpush

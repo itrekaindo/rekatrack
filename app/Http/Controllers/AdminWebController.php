@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TrackingSystem;
 use App\Models\TravelDocument;
+use App\Models\Items;
 use App\Models\Unit;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -11,179 +12,149 @@ use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Exports\ShippingsExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
 
 class AdminWebController extends Controller
 {
-    // Admin handling management SJN
-    public function shippingsIndex() {
-        $listTravelDocument = TravelDocument::paginate(10);
+    // ========================================
+    // SHIPPING MANAGEMENT
+    // ========================================
 
-        return view('General.shippings', compact('listTravelDocument'));
+    /**
+     * Display list of travel documents
+     */
+    public function shippingsIndex()
+    {
+        // Ambil data untuk pagination
+        $listTravelDocument = TravelDocument::latest('id')->paginate(10);
+
+        // Hitung total global per status (semua data, bukan hanya halaman ini)
+        $stats = TravelDocument::selectRaw(
+            "
+            SUM(CASE WHEN status = 'Belum terkirim' THEN 1 ELSE 0 END) as belum_terkirim,
+            SUM(CASE WHEN status = 'Sedang dikirim' THEN 1 ELSE 0 END) as sedang_dikirim,
+            SUM(CASE WHEN status = 'Terkirim' THEN 1 ELSE 0 END) as terkirim,
+            COUNT(*) as total
+        ",
+        )->first();
+
+        $breadcrumbs = [['label' => 'Home', 'url' => route('shippings.index')], ['label' => 'Manajemen Pengiriman', 'url' => '#']];
+
+        // Kirim ke view
+        return view('General.shippings', [
+            'listTravelDocument' => $listTravelDocument,
+            'totalPengiriman' => $stats->total,
+            'totalBelumTerkirim' => $stats->belum_terkirim,
+            'totalSedangDikirim' => $stats->sedang_dikirim,
+            'totalTerkirim' => $stats->terkirim,
+            'breadcrumbs' => $breadcrumbs,
+        ]);
     }
 
+    /**
+     * Search travel documents by multiple criteria
+     */
+    public function searchDocument(Request $request)
+    {
+        $query = $request->input('search');
 
-    public function searchDocument(Request $request){
-    $query = $request->query('search');
-
-    $results = TravelDocument::where('no_travel_document', 'like', "%$query%")
-        ->orWhere('send_to', 'like', "%$query%")
-        ->orWhere('status', 'like', "%$query%")
-        ->orWhere('project', 'like', "%$query%")
-        ->orderBy('id', 'desc')
-        ->get();
+        $results = TravelDocument::query()
+            ->where(function ($q) use ($query) {
+                $q->where('no_travel_document', 'like', "%{$query}%")
+                    ->orWhere('send_to', 'like', "%{$query}%")
+                    ->orWhere('status', 'like', "%{$query}%")
+                    ->orWhere('project', 'like', "%{$query}%");
+            })
+            ->latest('id')
+            ->get();
 
         return response()->json(['results' => $results]);
     }
 
-
-    public function shippingsDetail($id) {
+    /**
+     * Show detail of specific travel document
+     */
+    public function shippingsDetail($id)
+    {
         $travelDocument = TravelDocument::with(['items.unit'])->findOrFail($id);
-        return view('General.shippings-detail', compact('travelDocument'));
+
+        $breadcrumbs = [['label' => 'Home', 'url' => route('shippings.index')],
+                        ['label' => 'Manajemen Pengiriman', 'url' => route('shippings.index')],
+                        ['label' => 'Detail Pengiriman', 'url' => '#']];
+
+        return view('General.shippings-detail', compact('travelDocument', 'breadcrumbs'));
     }
 
-    public function shippingsAdd() {
+    /**
+     * Show form to add new travel document
+     */
+    public function shippingsAdd()
+    {
         $units = Unit::all();
-        return view('General.shippings-add', compact('units'));
+        $items = [['itemCode' => '', 'itemName' => '', 'quantitySend' => '', 'unitType' => '', 'description' => '', 'totalSend' => '', 'information' => '', 'qtyPreOrder' => '']];
+
+        $breadcrumbs = [['label' => 'Home', 'url' => route('shippings.index')],
+                        ['label' => 'Manajemen Pengiriman', 'url' => route('shippings.index')],
+                        ['label' => 'Tambah Pengiriman', 'url' => '#']];
+
+        return view('General.shippings-add', compact('units', 'items', 'breadcrumbs'));
     }
 
-    public function shippingsEdit($id) {
+    /**
+     * Show form to edit travel document
+     */
+    public function shippingsEdit($id)
+    {
         $travelDocument = TravelDocument::with('items')->findOrFail($id);
         $units = Unit::all();
 
-        return view('General.shippings-edit', compact('travelDocument', 'units'));
-    }
-
-    public function shippingsUpdate(Request $request, $id){
-        $validated = $request->validate([
-            'sendTo' => 'required',
-            'numberSJN' => 'required',
-            'numberRef' => 'required',
-            'projectName' => 'required',
-            'poNumber' => 'required',
-            'itemCode.*' => 'required',
-            'itemName.*' => 'required',
-            'quantitySend.*' => 'required',
-            'totalSend.*' => 'required',
-            'qtyPreOrder.*' => 'required',
-            'unitType.*' => 'required',
-            'description.*' => 'required',
-            'information.*' => 'nullable',
-        ]);
-
-        $travelDocument = TravelDocument::findOrFail($id);
-
-        $travelDocument->update([
-            'no_travel_document' => $validated['numberSJN'],
-            'send_to' => $validated['sendTo'],
-            'reference_number' => $validated['numberRef'],
-            'po_number' => $validated['poNumber'],
-            'project' => $validated['projectName'],
-            'status' => 'belum terkirim',
-        ]);
-
-        $travelDocument->items()->delete();
-
+        // Siapkan items untuk view
         $items = [];
-        foreach ($validated['itemCode'] as $key => $itemCode) {
-            $items[] = [
-                'travel_document_id' => $travelDocument->id,
-                'item_code' => $itemCode,
-                'item_name' => $validated['itemName'][$key],
-                'qty_send' => $validated['quantitySend'][$key],
-                'total_send' => $validated['totalSend'][$key],
-                'qty_po' => $validated['qtyPreOrder'][$key],
-                'unit_id' => $validated['unitType'][$key],
-                'description' => $validated['description'][$key],
-                'information' => $validated['information'][$key],
-            ];
+
+        // Jika ada old input (setelah redirect back), pakai old()
+        if (old('itemName')) {
+            $count = count(old('itemName'));
+            for ($i = 0; $i < $count; $i++) {
+                $items[] = [
+                    'itemName' => old("itemName.$i"),
+                    'itemCode' => old("itemCode.$i"),
+                    'quantitySend' => old("quantitySend.$i"),
+                    'unitType' => old("unitType.$i"),
+                    'description' => old("description.$i"),
+                    'totalSend' => old("totalSend.$i"),
+                    'information' => old("information.$i"),
+                    'qtyPreOrder' => old("qtyPreOrder.$i"),
+                ];
+            }
+        } else {
+            // Jika tidak, ambil dari database
+            foreach ($travelDocument->items as $item) {
+                $items[] = [
+                    'itemName' => $item->item_name,
+                    'itemCode' => $item->item_code,
+                    'quantitySend' => $item->qty_send,
+                    'unitType' => $item->unit_id,
+                    'description' => $item->description,
+                    'totalSend' => $item->total_send,
+                    'information' => $item->information,
+                    'qtyPreOrder' => $item->qty_po,
+                ];
+            }
         }
 
-        $travelDocument->items()->createMany($items);
+        $breadcrumbs = [['label' => 'Home', 'url' => route('shippings.index')],
+                        ['label' => 'Manajemen Pengiriman', 'url' => route('shippings.index')],
+                        ['label' => 'Edit Pengiriman', 'url' => '#']];
 
-        return redirect()->route('shippings.index')->with('success', 'Data pengiriman berhasil diperbarui.');
+        return view('General.shippings-edit', compact('travelDocument', 'units', 'items', 'breadcrumbs'));
     }
 
-    public function shippingsDelete($id) {
-        $travelDocument = TravelDocument::findOrFail($id);
-
-        foreach ($travelDocument->items as $item) {
-            $item->delete();
-        }
-        $travelDocument->delete();
-
-        return redirect()->route('shippings.index')->with('success', 'Data berhasil dihapus.');
-    }
-
-
-    public function showDetail($id) {
-        $travelDocument = TravelDocument::with('items')->findOrFail($id);
-
-        return view('detail', compact('travelDocument'));
-    }
-
-    public function shippingsAddTravelDocument(Request $request) {
-        $attributes = [];
-
-        foreach ($request->input('itemCode', []) as $key => $value) {
-            $attributes["itemCode.$key"] = 'Kode barang baris ' . ($key + 1);
-        }
-        foreach ($request->input('itemName', []) as $key => $value) {
-            $attributes["itemName.$key"] = 'Nama barang baris ' . ($key + 1);
-        }
-        foreach ($request->input('quantitySend', []) as $key => $value) {
-            $attributes["quantitySend.$key"] = 'Jumlah kirim baris ' . ($key + 1);
-        }
-        foreach ($request->input('totalSend', []) as $key => $value) {
-            $attributes["totalSend.$key"] = 'Total kirim baris ' . ($key + 1);
-        }
-        foreach ($request->input('qtyPreOrder', []) as $key => $value) {
-            $attributes["qtyPreOrder.$key"] = 'Qty PO baris ' . ($key + 1);
-        }
-        foreach ($request->input('unitType', []) as $key => $value) {
-            $attributes["unitType.$key"] = 'Satuan baris ' . ($key + 1);
-        }
-        foreach ($request->input('description', []) as $key => $value) {
-            $attributes["description.$key"] = 'Deskripsi baris ' . ($key + 1);
-        }
-        foreach ($request->input('information', []) as $key => $value) {
-            $attributes["information.$key"] = 'Informasi baris ' . ($key + 1);
-        }
-
-        $messages = [
-            'sendTo.required' => 'Tujuan pengiriman harus diisi.',
-            'numberSJN.required' => 'Nomor SJN harus diisi.',
-            'numberRef.required' => 'Nomor referensi harus diisi.',
-            'projectName.required' => 'Nama proyek harus diisi.',
-            'poNumber.required' => 'Nomor PO harus diisi.',
-
-            'itemCode.*.required' => ':attribute harus diisi.',
-            'itemName.*.required' => ':attribute harus diisi.',
-            'quantitySend.*.required' => ':attribute harus diisi.',
-            'totalSend.*.required' => ':attribute harus diisi.',
-            'qtyPreOrder.*.required' => ':attribute harus diisi.',
-            'unitType.*.required' => ':attribute harus diisi.',
-            'description.*.required' => ':attribute harus diisi.',
-            // 'information.*.required' => ':attribute harus diisi.',
-        ];
-
-        $rules = [
-            'sendTo' => 'required',
-            'numberSJN' => 'required',
-            'numberRef' => 'required',
-            'projectName' => 'required',
-            'poNumber' => 'required',
-
-            'itemCode.*' => 'required',
-            'itemName.*' => 'required',
-            'quantitySend.*' => 'required',
-            'totalSend.*' => 'required',
-            'qtyPreOrder.*' => 'required',
-            'unitType.*' => 'required',
-            'description.*' => 'required',
-            'information.*' => 'nullable',
-        ];
-
-        $validator = Validator::make($request->all(), $rules, $messages, $attributes);
+    /**
+     * Store new travel document with items
+     */
+    public function shippingsAddTravelDocument(Request $request)
+    {
+        $validator = $this->validateTravelDocument($request);
 
         if ($validator->fails()) {
             return redirect()->back()->withInput()->withErrors($validator);
@@ -191,68 +162,140 @@ class AdminWebController extends Controller
 
         $validated = $validator->validated();
 
+        DB::beginTransaction();
+        try {
+            $travelDocument = $this->createTravelDocument($validated);
+            $this->createTravelDocumentItems($travelDocument, $validated);
 
-        $travelDocument = TravelDocument::create([
-            'no_travel_document' => $validated['numberSJN'],
-            'date_no_travel_document' => now(),
-            'send_to' => $validated['sendTo'],
-            'reference_number' => $validated['numberRef'],
-            'po_number' => $validated['poNumber'],
-            'project' => $validated['projectName'],
-            'status' => 'belum terkirim',
+            DB::commit();
+            return redirect()->route('shippings.index')->with('success', 'Data pengiriman berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update existing travel document
+     */
+    public function shippingsUpdate(Request $request, $id)
+    {
+        $validated = $request->validate($this->getValidationRules(), $this->getValidationMessages());
+
+        DB::beginTransaction();
+        try {
+            $travelDocument = TravelDocument::findOrFail($id);
+
+            $this->updateTravelDocument($travelDocument, $validated);
+            $travelDocument->items()->delete();
+            $this->createTravelDocumentItems($travelDocument, $validated);
+
+            DB::commit();
+            return redirect()->route('shippings.index')->with('success', 'Data pengiriman berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat memperbarui data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete travel document and its items
+     */
+    public function shippingsDelete($id)
+    {
+        DB::beginTransaction();
+        try {
+            $travelDocument = TravelDocument::findOrFail($id);
+            // Soft delete akan otomatis handle items karena cascade
+            $travelDocument->delete();
+
+            DB::commit();
+            return redirect()->route('shippings.index')->with('success', 'Data berhasil dihapus.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+                ->back()
+                ->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
+        }
+    }
+
+    // ========================================
+    // PRINT & EXPORT
+    // ========================================
+
+    /**
+     * Generate PDF for travel document
+     */
+    public function printShippings($id)
+    {
+        $travelDocument = TravelDocument::with('items.unit')->findOrFail($id);
+
+        $qrString = "SJNID:{$id}";
+        $qrCode = base64_encode(QrCode::format('svg')->size(200)->errorCorrection('H')->generate($qrString));
+
+        $pdf = PDF::loadView('General.shippings-print', compact('travelDocument', 'qrCode'));
+        return $pdf->stream("SJN_{$travelDocument->no_travel_document}.pdf");
+    }
+
+    /**
+     * Export shippings to Excel
+     */
+    public function exportShippings(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        $items = [];
-        foreach ($validated['itemCode'] as $key => $itemCode) {
-            $items[] = [
-                'travel_document_id' => $travelDocument->id,
-                'item_code' => $itemCode,
-                'item_name' => $validated['itemName'][$key],
-                'qty_send' => $validated['quantitySend'][$key],
-                'total_send' => $validated['totalSend'][$key],
-                'qty_po' => $validated['qtyPreOrder'][$key],
-                'unit_id' => $validated['unitType'][$key],
-                'description' => $validated['description'][$key],
-                'information' => $validated['information'][$key],
-            ];
+        $filename = 'pengiriman_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(new ShippingsExport($request->start_date, $request->end_date), $filename);
+    }
+
+    // ========================================
+    // TRACKING
+    // ========================================
+
+    /**
+     * Show tracking page
+     */
+    public function track(Request $request)
+    {
+        if ($request->has(['status', 'message'])) {
+            session()->flash($request->status, $request->message);
         }
-
-        $travelDocument->items()->createMany($items);
-
-        return redirect()->route('shippings.index')->with('success', 'Data pengiriman berhasil ditambahkan.');
+        $breadcrumbs = [['label' => 'Home', 'url' => route('shippings.index')],
+                        ['label' => 'Tracking Pengiriman', 'url' => '#']];
+        return view('General.tracker', compact('breadcrumbs'));
     }
 
-
-
-    // Print SJN
-    public function printShippings($id){
-        $travelDocument = TravelDocument::with('items')->findOrFail($id);
-
-        $qrString = "SJNID:" . $id;
-        $qrCode = base64_encode(QrCode::format('svg')->size(200)->errorCorrection('H')->generate($qrString));
-        $pdf = PDF::loadView('General.shippings-print', compact('travelDocument', 'qrCode'));
-
-        return $pdf->stream();
-
-        return view('General.shippings-print', compact('travelDocument', 'qrCode'));
-    }
-
+    /**
+     * Show tracker with specific track_id
+     */
     public function showTracker($track_id)
     {
-        $trackingSystem = TrackingSystem::with('track')
-            ->where('track_id', $track_id)
-            ->firstOrFail();
+        $trackingSystem = TrackingSystem::with('track')->where('track_id', $track_id)->firstOrFail();
 
-        $locations = TrackingSystem::where('track_id', $track_id)
-            ->get(['latitude', 'longitude']);
+        $locations = TrackingSystem::where('track_id', $track_id)->get(['latitude', 'longitude']);
 
-        $initialLocation = $locations->isNotEmpty() ? [$locations[0]->latitude, $locations[0]->longitude] : [0, 0];
+        $initialLocation = $locations->isNotEmpty() ? [$locations->first()->latitude, $locations->first()->longitude] : [0, 0];
+        // $breadcrumbs = [['label' => 'Home', 'url' => route('shippings.index')],
+        //                 ['label' => 'Tracking Pengiriman', 'url' => route('tracking')],
+        //                 ['label' => 'Detail Tracking', 'url' => '#']];
 
-        return view('General.tracker', compact('trackingSystem', 'locations', 'initialLocation'));
+        return view('General.tracker', compact('trackingSystem', 'locations', 'initialLocation', 'breadcrumbs'));
     }
 
-
-  public function search(Request $request)
+    /**
+     * Search tracking by travel document number
+     */
+    public function search(Request $request)
     {
         $noTravelDocument = $request->query('no_travel_document');
 
@@ -261,9 +304,171 @@ class AdminWebController extends Controller
             ->first();
 
         if (!$travelDocument) {
-            return redirect()->back()->with('error', 'Travel Document tidak ditemukan');
+            return $this->trackingErrorResponse('Travel Document tidak ditemukan');
         }
 
+        $locations = $this->extractLocations($travelDocument);
+
+        if (empty($locations)) {
+            return $this->trackingErrorResponse('Lokasi tidak ditemukan');
+        }
+
+        return response()->json([
+            'success' => true,
+            'locations' => $locations,
+        ]);
+    }
+
+    // ========================================
+    // HELPER METHODS (PRIVATE)
+    // ========================================
+
+    /**
+     * Validate travel document request
+     */
+    private function validateTravelDocument(Request $request)
+    {
+        $attributes = $this->getValidationAttributes($request);
+        $rules = $this->getValidationRules();
+        $messages = $this->getValidationMessages();
+
+        return Validator::make($request->all(), $rules, $messages, $attributes);
+    }
+
+    /**
+     * Get validation rules
+     */
+    private function getValidationRules(): array
+    {
+        return [
+            'sendTo' => 'required|string|max:255',
+            'numberSJN' => 'required|string|max:100',
+            'numberRef' => 'required|string|max:100',
+            'projectName' => 'required|string|max:255',
+            'poNumber' => 'required|string|max:100',
+            'itemCode.*' => 'required|string|max:100',
+            'itemName.*' => 'required|string|max:255',
+            'quantitySend.*' => 'nullable|integer|min:0',
+            'totalSend.*' => 'required|integer|min:0',
+            'qtyPreOrder.*' => 'nullable|integer|min:0',
+            'unitType.*' => 'required|exists:units,id',
+            'description.*' => 'required|string',
+            'information.*' => 'nullable|string',
+        ];
+    }
+
+    /**
+     * Get validation messages
+     */
+    private function getValidationMessages(): array
+    {
+        return [
+            'sendTo.required' => 'Tujuan pengiriman harus diisi.',
+            'numberSJN.required' => 'Nomor SJN harus diisi.',
+            'numberRef.required' => 'Nomor referensi harus diisi.',
+            'projectName.required' => 'Nama proyek harus diisi.',
+            'poNumber.required' => 'Nomor PO harus diisi.',
+            'itemCode.*.required' => ':attribute harus diisi.',
+            'itemName.*.required' => ':attribute harus diisi.',
+            'totalSend.*.required' => ':attribute harus diisi.',
+            'totalSend.*.integer' => ':attribute harus berupa angka.',
+            'totalSend.*.min' => ':attribute minimal 0.',
+            'quantitySend.*.integer' => ':attribute harus berupa angka.',
+            'quantitySend.*.min' => ':attribute minimal 0.',
+            'qtyPreOrder.*.integer' => ':attribute harus berupa angka.',
+            'qtyPreOrder.*.min' => ':attribute minimal 0.',
+            'unitType.*.required' => ':attribute harus diisi.',
+            'unitType.*.exists' => ':attribute tidak valid.',
+            'description.*.required' => ':attribute harus diisi.',
+        ];
+    }
+
+    /**
+     * Get custom validation attributes
+     */
+    private function getValidationAttributes(Request $request): array
+    {
+        $attributes = [];
+        $fields = [
+            'itemCode' => 'Kode barang',
+            'itemName' => 'Nama barang',
+            'quantitySend' => 'Jumlah kirim',
+            'totalSend' => 'Total kirim',
+            'qtyPreOrder' => 'Qty PO',
+            'unitType' => 'Satuan',
+            'description' => 'Deskripsi',
+            'information' => 'Informasi',
+        ];
+
+        foreach ($fields as $field => $label) {
+            foreach ($request->input($field, []) as $key => $value) {
+                $attributes["{$field}.{$key}"] = "{$label} baris " . ($key + 1);
+            }
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Create travel document
+     */
+    private function createTravelDocument(array $validated): TravelDocument
+    {
+        return TravelDocument::create([
+            'no_travel_document' => $validated['numberSJN'],
+            'date_no_travel_document' => now(),
+            'send_to' => $validated['sendTo'],
+            'reference_number' => $validated['numberRef'],
+            'po_number' => $validated['poNumber'],
+            'project' => $validated['projectName'],
+            'status' => 'Belum terkirim', // Sesuai dengan ENUM di migration
+        ]);
+    }
+
+    /**
+     * Update travel document
+     */
+    private function updateTravelDocument(TravelDocument $travelDocument, array $validated): void
+    {
+        $travelDocument->update([
+            'no_travel_document' => $validated['numberSJN'],
+            'send_to' => $validated['sendTo'],
+            'reference_number' => $validated['numberRef'],
+            'po_number' => $validated['poNumber'],
+            'project' => $validated['projectName'],
+            'status' => 'Belum terkirim', // Sesuai dengan ENUM di migration
+        ]);
+    }
+
+    /**
+     * Create travel document items
+     */
+    private function createTravelDocumentItems(TravelDocument $travelDocument, array $validated): void
+    {
+        $items = [];
+
+        foreach ($validated['itemCode'] as $key => $itemCode) {
+            $items[] = [
+                'travel_document_id' => $travelDocument->id,
+                'item_code' => $itemCode,
+                'item_name' => $validated['itemName'][$key],
+                'qty_send' => $validated['quantitySend'][$key] ?? 0,
+                'total_send' => (int) $validated['totalSend'][$key],
+                'qty_po' => $validated['qtyPreOrder'][$key] ?? 0,
+                'unit_id' => $validated['unitType'][$key],
+                'description' => $validated['description'][$key],
+                'information' => $validated['information'][$key] ?? null,
+            ];
+        }
+
+        $travelDocument->items()->createMany($items);
+    }
+
+    /**
+     * Extract locations from travel document
+     */
+    private function extractLocations(TravelDocument $travelDocument): array
+    {
         $locations = [];
 
         foreach ($travelDocument->trackingSystems as $trackingSystem) {
@@ -275,43 +480,24 @@ class AdminWebController extends Controller
             }
         }
 
-        if (empty($locations)) {
-            return redirect()->back()->with('error', 'Lokasi tidak ditemukan');
-        }
-
-        // Jika berhasil dan ada lokasi
-        return response()->json([
-            'success' => true,
-            'locations' => $locations,
-        ]);
+        return $locations;
     }
 
-
-    public function track(Request $request){
-        if ($request->has(['status', 'message'])) {
-            session()->flash($request->status, $request->message);
-        }
-
-        return view('General.tracker');
-    }
-
-    public function exportShippings(Request $request)
+    /**
+     * Return tracking error response
+     */
+    private function trackingErrorResponse(string $message)
     {
-        $request->validate([
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
+        if (request()->expectsJson()) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => $message,
+                ],
+                404,
+            );
+        }
 
-        $startDate = $request->start_date;
-        $endDate = $request->end_date;
-
-        return Excel::download(
-            new ShippingsExport($startDate, $endDate),
-            'pengiriman_' . now()->format('Y-m-d_His') . '.xlsx'
-        );
+        return redirect()->back()->with('error', $message);
     }
-
-
-
-
 }

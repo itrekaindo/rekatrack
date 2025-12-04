@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\Auth;
 class AuthWebController extends Controller
 {
     public function login(Request $request){
+        // Jika sudah login, redirect
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user->role?->name === 'Super Admin') {
+                return redirect()->route('users.index');
+            }
+            return redirect()->route('shippings.index');
+        }
+
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required',
@@ -36,8 +45,13 @@ class AuthWebController extends Controller
 
 
 
-    public function logout() {
+    public function logout(Request $request) {
         Auth::logout();
+
+        // Hapus session & regenerasi token
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 }

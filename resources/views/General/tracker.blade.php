@@ -1,189 +1,162 @@
-<!doctype html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8" />
-    <meta
-        name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
-    />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>
-        Manajemen Pengiriman | Rekatrack
-    </title>
-    @vite('resources/css/app.css')
-    @vite('resources/js/app.js')
-</head>
-<body
-    x-data="{ page: 'ecommerce', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false }"
-    x-init="
-        darkMode = JSON.parse(localStorage.getItem('darkMode'));
-        $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
-    :class="{'dark bg-gray-900': darkMode === true}"
->
+@extends('layouts.app')
 
-    <div
-         x-data="{ show: true, type: '', message: '' }"
-    x-init="
-        console.log('Alert init, show:', show);
-        window.addEventListener('alert', e => {
-            console.log('Alert event received:', e.detail);
-            type = e.detail.type;
-            message = e.detail.message;
-            show = true;
-            console.log('Show set to:', show);
-            setTimeout(() => show = true, 5000);
+@section('title', 'Tracking | RekaTrack')
+@php($pageName = 'Tracking')
+
+@section('content')
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title">Cari Lokasi Pengiriman</h4>
+      </div>
+      <div class="card-body">
+        <div class="d-flex flex-column flex-md-row gap-2">
+          <input
+            type="text"
+            id="search"
+            placeholder="Cari Berdasarkan Surat Jalan..."
+            class="form-control"
+          />
+          <button
+            onclick="searchTracking()"
+            class="btn btn-primary"
+          >
+            <i class="fas fa-search me-1"></i> Cari
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 mt-4">
+    <div class="card">
+      <div class="card-body p-0" style="height: 600px; position: relative;">
+        <div id="map" class="w-100 h-100"></div>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection
+
+@push('styles')
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 100%;
+      width: 100%;
+      border-radius: 0.5rem;
+    }
+    .leaflet-container {
+      z-index: 1;
+    }
+  </style>
+@endpush
+
+@push('scripts')
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // Inisialisasi peta
+    var center = [-7.61617286255246, 111.52143728913316];
+    var map = L.map("map").setView(center, 10);
+
+    L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    L.marker(center).addTo(map).bindPopup("Lokasi Default");
+
+    // Fungsi notifikasi ala Kaiadmin
+    function showToast(type, message) {
+      // Gunakan notifikasi bawaan Kaiadmin (berbasis Bootstrap)
+      $.notify({
+        icon: type === 'success' ? 'fas fa-check' :
+              type === 'error' ? 'fas fa-times' :
+              type === 'warning' ? 'fas fa-exclamation-triangle' : 'fas fa-info',
+        title: type.charAt(0).toUpperCase() + type.slice(1),
+        message: message,
+      }, {
+        type: type,
+        placement: {
+          from: "top",
+          align: "right"
+        },
+        time: 5000,
+        delay: 0,
+        animate: {
+          enter: 'animated fadeInDown',
+          exit: 'animated fadeOutUp'
+        }
+      });
+    }
+
+    function searchTracking() {
+      var searchQuery = document.getElementById("search").value.trim();
+
+      if (!searchQuery) {
+        showToast('warning', 'Masukkan nomor surat jalan');
+        return;
+      }
+
+      fetch(`/search-travel-document?no_travel_document=${encodeURIComponent(searchQuery)}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.locations && data.locations.length > 0) {
+            updateMapWithLocations(data.locations);
+          } else {
+            showToast('error', 'Data tidak ditemukan');
+          }
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          showToast('error', 'Gagal mengambil data');
         });
-    "
-        x-show="show"
-        :class="{
-            'border-error-500 bg-error-50': type === 'error',
-            'border-success-500 bg-success-50': type === 'success',
-            'border-info-500 bg-info-50': type === 'info',
-            'border-warning-500 bg-warning-50': type === 'warning'
-        }"
-        class="fixed top-5 right-5 rounded-xl border p-4 transition duration-500 z-50 w-96"
-    >
-        <div class="flex items-start gap-3">
-            <div class="text-sm font-semibold text-gray-800" x-text="type.toUpperCase() + ' MESSAGE'"></div>
-            <div class="text-sm text-gray-500" x-text="message"></div>
-        </div>
-    </div>
+    }
 
-
-    @include('partials.preloader')
-    <div class="flex h-screen overflow-hidden">
-        @include('Template.sidebar')
-        <div
-            class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto"
-        >
-            @include('partials.overlay')
-            @include('Template.header')
-            <main class="flex flex-col h-screen">
-                <div class="bg-white z-10 shadow-md">
-                <div class="bg-white dark:bg-black bg-opacity-70 p-2">
-                    <div class="flex space-x-2">
-                    <input
-                        type="text"
-                        id="search"
-                        placeholder="Cari Berdasarkan Surat Jalan..."
-                        class="flex-1 px-4 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:text-gray-200 dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    />
-                    <button
-                        onclick="searchTracking()"
-                        class="bg-blue-500 text-white px-4 py-2 rounded-md"
-                    >
-                        Cari
-                    </button>
-                    </div>
-                </div>
-                </div>
-
-                <div class="flex-1 relative">
-                    <div id="map" class="absolute top-0 left-0 w-full h-full"></div>
-                </div>
-            </main>
-        </div>
-    </div>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <script>
-        var center = [-7.61617286255246, 111.52143728913316];
-
-        var map = L.map("map").setView(center, 10); 
-    
-        L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 18,
-        }).addTo(map);
-
-        L.marker(center).addTo(map);
-    </script>
-
-    <script>
-       function showCustomAlert(type, message) {
-            alert(type + '\n' + message);
+    function updateMapWithLocations(locations) {
+      // Hapus semua marker dan polyline lama
+      map.eachLayer(function (layer) {
+        if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+          map.removeLayer(layer);
         }
+      });
 
+      const latLngs = locations.map(loc => [loc.latitude, loc.longitude]);
+      const lastLocation = locations[locations.length - 1];
+      const lastLatLng = [lastLocation.latitude, lastLocation.longitude];
 
-        function searchTracking() {
-            var searchQuery = document.getElementById("search").value;
+      // Tambahkan marker terakhir
+      L.marker(lastLatLng)
+        .addTo(map)
+        .bindPopup(`Lokasi: ${lastLocation.latitude}, ${lastLocation.longitude}`)
+        .openPopup();
 
-            if (searchQuery) {
-                fetch(`/search-travel-document?no_travel_document=${searchQuery}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            updateMapWithLocations(data.locations);
-                        } else {
-                            showCustomAlert('error', 'Data tidak ditemukan');
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Terjadi kesalahan:", error);
-                        showCustomAlert('error', 'Gagal mengambil data');
-                    });
-            } else {
-                showCustomAlert('warning', 'Masukkan nomor surat jalan');
+      // Jika ada lebih dari 1 titik, ambil rute dari OpenRouteService
+      if (latLngs.length > 1) {
+        const start = latLngs[0];
+        const end = latLngs[latLngs.length - 1];
+        const apiKey = '5b3ce3597851110001cf6248b4c0aaa51d204cea888ada05975d8638';
+
+        fetch(`https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${start[1]},${start[0]}&end=${end[1]},${end[0]}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.features && data.features[0]) {
+              const route = data.features[1].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+              L.polyline(route, { color: 'blue', weight: 4, opacity: 0.7 }).addTo(map);
+              map.fitBounds(L.latLngBounds(route));
             }
-        }
+          })
+          .catch(err => {
+            console.warn('Failed to fetch route, showing direct line:', err);
+            // Fallback: buat garis langsung
+            L.polyline(latLngs, { color: 'gray', weight: 2, dashArray: '5,5' }).addTo(map);
+            map.fitBounds(L.latLngBounds(latLngs));
+          });
+      }
 
-        function updateMapWithLocations(locations) {
-            map.eachLayer(function (layer) {
-                if (layer instanceof L.Marker || layer instanceof L.Polyline) {
-                    map.removeLayer(layer);
-                }
-            });
-
-            const latLngs = locations.map(location => [location.latitude, location.longitude]);
-
-            if (latLngs.length > 1) {
-                var start = latLngs[0];
-                var end = latLngs[latLngs.length - 1];
-                
-                var apiKey = '5b3ce3597851110001cf6248b4c0aaa51d204cea888ada05975d8638'; // API
-
-                function getRoute(start, end) {
-                    var url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${start[1]},${start[0]}&end=${end[1]},${end[0]}`;
-
-                    fetch(url)
-                        .then(response => response.json())
-                        .then(data => {
-                            var route = data.features[0].geometry.coordinates;
-                            var latlngs = route.map(function(coord) {
-                                return [coord[1], coord[0]];  
-                            });
-
-                            L.polyline(latlngs, { color: 'blue', weight: 4, opacity: 0.7 }).addTo(map);
-                            map.fitBounds(L.latLngBounds(latlngs));
-                        })
-                        .catch(error => console.error('Error fetching route:', error));
-                }
-
-                getRoute(start, end);
-            }
-
-            // locations.forEach(location => {
-            //     const latLng = [location.latitude, location.longitude];
-            //     L.marker(latLng).addTo(map).bindPopup(`Lokasi: ${location.latitude}, ${location.longitude}`);
-            // });
-
-            // if (latLngs.length === 1) {
-            //     L.marker(latLngs[0]).addTo(map);
-            // }
-
-            // if (latLngs.length > 1) {
-            //     map.fitBounds(L.latLngBounds(latLngs));
-            // }
-
-            const lastLocation = locations[locations.length - 1];
-            const lastLatLng = [lastLocation.latitude, lastLocation.longitude];
-            L.marker(lastLatLng).addTo(map).bindPopup(`Lokasi: ${lastLocation.latitude}, ${lastLocation.longitude}`);
-
-            map.setView(lastLatLng, 13);
-
-        }
-    </script>
-
-</body>
-</html>
+      map.setView(lastLatLng, 13);
+    }
+  </script>
+@endpush

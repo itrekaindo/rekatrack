@@ -1,204 +1,141 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
-    />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>
-      Detail Pengiriman | Rekatrack
-    </title>
-  </head>
-    @vite('resources/css/app.css')
-    @vite('resources/js/app.js')
-  <body
-    x-data="{ page: 'ecommerce', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false }"
-    x-init="
-         darkMode = JSON.parse(localStorage.getItem('darkMode'));
-         $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
-    :class="{'dark bg-gray-900': darkMode === true}"
-  >
-    <!-- ===== Preloader Start ===== -->
-    @include('partials.preloader')
-    <!-- ===== Preloader End ===== -->
+@extends('layouts.app')
 
-    <!-- ===== Page Wrapper Start ===== -->
-    <div class="flex h-screen overflow-hidden">
-      <!-- ===== Sidebar Start ===== -->
-      @include('Template.sidebar')
-      <!-- ===== Sidebar End ===== -->
+@section('title', 'Detail Pengiriman - RekaTrack')
+@php($pageName = 'Detail Pengiriman ' . ($travelDocument->no_travel_document ?? ''))
 
-      <!-- ===== Content Area Start ===== -->
-      <div
-        class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto"
-      >
-        <!-- Small Device Overlay Start -->
-        @include('partials.overlay')
-        <!-- Small Device Overlay End -->
-
-        <!-- ===== Header Start ===== -->
-        @include('Template.header')
-        <!-- ===== Header End ===== -->
-
-        <!-- ===== Main Content Start ===== -->
-        <main>
-        <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-            <div x-data="{ pageName: `Manajemen Pengiriman`, subPageName: 'Detail Pengiriman'}">
-                @include('Template.breadcrumb')
-            </div>
-
-            <!-- Information Detail -->
-            <div class="mb-6 px-4 grid grid-cols-12 gap-3">
-              <div class="col-span-8 text-left">
-                <div class="flex flex-inline mb-3 gap-1">
-                  <p class="font-semibold">Kepada:</p>
-                  <p class="font-normal truncate hover:overflow-visible hover:whitespace-normal hover:text-ellipsis">
-                    {{ $travelDocument->send_to }}
-                  </p>
-                </div>
-                <div class="flex flex-inline mb-3 gap-1">
-                  <p class="font-semibold">Proyek:</p>
-                  <p class="font-normal">{{ $travelDocument->project }}</p>
-                </div>
-                <div class="flex flex-inline mb-3 gap-1">
-                  <p class="font-semibold">Tanggal SJN:</p>
-                  <p class="font-normal">{{ \Carbon\Carbon::parse($travelDocument->date_no_travel_document)->format('d/m/Y') }}</p>
-                </div>
-              </div>
-              <div class="col-span-4 text-left">
-                <div class="flex flex-inline mb-3 gap-1">
-                  <p class="font-semibold">Nomor SJN:</p>
-                  <p class="font-normal">{{ $travelDocument->no_travel_document }}</p>
-                </div>
-                <div class="flex flex-inline mb-3 gap-1">
-                  <p class="font-semibold">PO:</p>
-                  <p class="font-normal">{{ $travelDocument->po_number }}</p>
-                </div>
-                <div class="flex flex-inline mb-3 gap-1">
-                  <p class="font-semibold">Ref:</p>
-                  <p class="font-normal">{{ $travelDocument->reference_number }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Start Tables -->
-            <!-- Start Table Content -->
-            <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-              <div class="max-w-full overflow-x-auto">
-                <table class="min-w-full">
-                  <thead>
-                    <tr class="border-b border-gray-100 dark:border-gray-800">
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">No</p>
-                        </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama Barang</p>
-                        </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Kode Barang</p>
-                        </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">QTY Kirim</p>
-                        </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">QTY PO</p>
-                        </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Total Kirim</p>
-                        </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Satuan</p>
-                        </div>
-                      </th>
-                      <th class="px-5 py-3 sm:px-6">
-                        <div class="flex items-center">
-                          <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Keterangan</p>
-                        </div>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                    @foreach($travelDocument->items as $index => $item)
-                        <tr>
-                          <td class="px-5 py-4 sm:px-6">
-                              <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ $index + 1 }}</p> 
-                          </td>
-                          <td class="px-5 py-4 sm:px-6">
-                              <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ $item->item_name }}</p>
-                          </td>
-                          <td class="px-5 py-4 sm:px-6">
-                              <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ $item->item_code }}</p> 
-                          </td>
-                          <td class="px-5 py-4 sm:px-6">
-                              <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ $item->qty_send }}</p>
-                          </td> 
-                          <td class="px-5 py-4 sm:px-6">
-                              <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ $item->total_send }}</p> 
-                          </td>
-                          <td class="px-5 py-4 sm:px-6">
-                              <p class="text-gray-500 text-theme-sm dark:text-gray-400"> {{ $item->qty_po }}</p>
-                          </td>
-                          <td class="px-5 py-4 sm:px-6">
-                            <p class="text-gray-500 text-theme-sm dark:text-gray-400">
-                              {{ $item->unit->name ?? '-' }}
-                            </p>
-                          </td>
-                          <td class="px-5 py-4 sm:px-6">
-                              <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ $item->information }}</p>
-                          </td>
-                        </tr>
-                    @endforeach
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <!-- End Table Content -->
-
-            <div class="justify-end flex space-x-4 py-4">
-              <a href="{{ route('shippings.edit', ['id' => $travelDocument->id ]) }}"
-                class="bg-gray-600 hover:bg-gray-500 text-white rounded-md px-3.5 py-2.5 text-sm font-semibold shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                Edit Surat Jalan
-              </a>
-            
-            <!-- Cetak Surat Jalan Button -->
-              <form action="{{ route('shippings.print', ['id' => $travelDocument->id ]) }}" method="GET">
-                @csrf
-                <!-- Hidden Field to Send travelDocument ID -->
-                <!-- <input type="hidden" name="travelDocumentId" value="{{ $travelDocument->id }}"> -->
-                <button 
-                  type="submit" 
-                  class="bg-blue-500 hover:bg-blue-400 text-white rounded-md px-3.5 py-2.5 text-sm font-semibold shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                  Cetak Surat Jalan
-                </button>
-              </form>
-
-            </div>
-
-
-
-          </div>
-            
-        </main>
-        <!-- ===== Main Content End ===== -->
+@section('content')
+<div class="row">
+  <!-- Informasi Utama -->
+  <div class="col-md-8">
+    <div class="card card-full-height">
+      <div class="card-header">
+        <h4 class="card-title">Detail Pengiriman</h4>
       </div>
-      <!-- ===== Content Area End ===== -->
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <p class="text-muted mb-1">Kepada</p>
+            <h5>{{ $travelDocument->send_to ?? '-' }}</h5>
+          </div>
+          <div class="col-sm-6">
+            <p class="text-muted mb-1">Proyek</p>
+            <h5>{{ $travelDocument->project ?? '-' }}</h5>
+          </div>
+          <div class="col-sm-6">
+            <p class="text-muted mb-1">Tanggal SJN</p>
+            <h5>
+              @if($travelDocument->date_no_travel_document)
+                {{ \Carbon\Carbon::parse($travelDocument->date_no_travel_document)->format('d/m/Y') }}
+              @else
+                -
+              @endif
+            </h5>
+          </div>
+        </div>
+      </div>
     </div>
-    <!-- ===== Page Wrapper End ===== -->
-  </body>
+  </div>
 
-</html>
+  <!-- Referensi & Status -->
+  <div class="col-md-4">
+    <div class="card card-full-height">
+      <div class="card-header">
+        <h4 class="card-title">Referensi</h4>
+      </div>
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>Nomor SJN</span>
+            <strong>{{ $travelDocument->no_travel_document ?? '-' }}</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>PO</span>
+            <strong>{{ $travelDocument->po_number ?? '-' }}</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>Ref</span>
+            <strong>{{ $travelDocument->reference_number ?? '-' }}</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>Status</span>
+            @if($travelDocument->status == 'Belum terkirim')
+              <span class="badge badge-warning">Belum terkirim</span>
+            @elseif($travelDocument->status == 'Sedang dikirim')
+              <span class="badge badge-info">Sedang dikirim</span>
+            @elseif($travelDocument->status == 'Terkirim')
+              <span class="badge badge-success">Terkirim</span>
+            @else
+              <span class="badge badge-secondary">-</span>
+            @endif
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabel Barang -->
+<div class="row mt-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="card-title mb-0">Daftar Barang</h4>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th width="5%">No</th>
+                <th>Nama Barang</th>
+                <th>Kode Barang</th>
+                <th class="text-end">QTY Kirim</th>
+                <th class="text-end">QTY PO</th>
+                <th class="text-end">Total Kirim</th>
+                <th>Satuan</th>
+                <th>Keterangan</th>
+              </tr>
+            </thead>
+            <tbody>
+              @forelse($travelDocument->items as $index => $item)
+                <tr>
+                  <td>{{ $index + 1 }}</td>
+                  <td>{{ $item->item_name }}</td>
+                  <td>{{ $item->item_code }}</td>
+                  <td class="text-end">{{ $item->qty_send ?? '-' }}</td>
+                  <td class="text-end">{{ $item->qty_po ?? '-' }}</td>
+                  <td class="text-end">{{ $item->total_send ?? '-' }}</td>
+                  <td>{{ $item->unit->name ?? '-' }}</td>
+                  <td>{{ $item->information ?? '-' }}</td>
+                </tr>
+              @empty
+                <tr>
+                  <td colspan="8" class="text-center py-4 text-muted">
+                    <i class="fas fa-box-open fs-2 d-block mb-2"></i>
+                    Tidak ada barang
+                  </td>
+                </tr>
+              @endforelse
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Aksi Bawah -->
+<div class="row mt-4">
+  <div class="col-md-12 d-flex justify-content-end gap-2">
+    <a href="{{ route('shippings.edit', $travelDocument->id) }}" class="btn btn-secondary btn-round">
+      <i class="fas fa-edit me-1"></i> Edit
+    </a>
+    <form action="{{ route('shippings.print', $travelDocument->id) }}" method="GET" class="d-inline">
+      @csrf
+      <button type="submit" class="btn btn-primary btn-round">
+        <i class="fas fa-print me-1"></i> Cetak Surat Jalan
+      </button>
+    </form>
+  </div>
+</div>
+@endsection

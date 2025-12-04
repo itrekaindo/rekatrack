@@ -1,9 +1,17 @@
-<div
-  x-show="loaded"
-  x-init="window.addEventListener('DOMContentLoaded', () => {setTimeout(() => loaded = false, 500)})"
-  class="fixed left-0 top-0 z-999999 flex h-screen w-screen items-center justify-center bg-white dark:bg-black"
->
-  <div
-    class="h-16 w-16 animate-spin rounded-full border-4 border-solid border-brand-500 border-t-transparent"
-  ></div>
+<div id="preloader" class="fixed inset-0 z-50 flex items-center justify-center bg-white">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
 </div>
+
+<script>
+  // Hilangkan preloader setelah halaman siap
+  document.addEventListener("DOMContentLoaded", function() {
+    const preloader = document.getElementById('preloader');
+    if (preloader) {
+      setTimeout(() => {
+        preloader.style.display = 'none';
+      }, 800);
+    }
+  });
+</script>
