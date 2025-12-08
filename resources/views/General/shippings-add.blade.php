@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tambah Pengiriman | RekaTrack')
+@section('title', 'Tambah Pengiriman - RekaTrack')
 @php($pageName = 'Tambah Data Pengiriman')
 
 @section('content')

@@ -42,7 +42,7 @@
           >
             <div class="avatar-sm">
               <img
-                src="{{ asset('assets/img/profile.jpg') }}"
+                src="{{ auth()->user()->avatar_url }}"
                 alt="Profile"
                 class="avatar-img rounded-circle"
               />
@@ -58,7 +58,7 @@
                 <div class="user-box">
                   <div class="avatar-lg">
                     <img
-                      src="{{ asset('assets/img/profile.jpg') }}"
+                      src="{{ auth()->user()->avatar_url }}"
                       alt="Profile"
                       class="avatar-img rounded"
                     />

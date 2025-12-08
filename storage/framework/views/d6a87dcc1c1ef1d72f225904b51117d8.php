@@ -45,11 +45,11 @@
         </li>
 
         <!-- Menu: Tracking -->
-        <li class="nav-item <?php echo e(request()->routeIs('tracking') ? 'active' : ''); ?>">
-          <a class="nav-link" href="<?php echo e(route('tracking')); ?>" title="Tracking">
+        <li class="nav-item <?php echo e(request()->routeIs('tracking.*') ? 'active' : ''); ?>">
+        <a class="nav-link" href="<?php echo e(route('tracking.index')); ?>" title="Tracking">
             <i class="fas fa-map-marked-alt"></i>
             <p>Tracking</p>
-          </a>
+        </a>
         </li>
 
         <!-- Menu: Manajemen User (Only for Super Admin) -->

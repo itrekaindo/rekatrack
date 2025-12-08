@@ -13,8 +13,25 @@ class User extends Authenticatable
     protected $table = 'users';
 
     protected $fillable = [
-        'nip', 'role_id', 'name', 'email', 'password', 'phone_number',
+        'nip', 'role_id', 'name', 'email', 'password', 'phone_number', 'avatar', // 👈 tambahkan 'avatar'
     ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    // ✅ Tambahkan accessor untuk avatar dengan fallback
+    public function getAvatarUrlAttribute()
+    {
+        // Cek jika avatar ada di public/images/user/
+        if ($this->avatar && file_exists(public_path($this->avatar))) {
+            return asset($this->avatar); // → asset('images/user/avatar_1_123.jpg')
+        }
+
+        // Fallback
+        return asset('images/user/default-avatar.jpg');
+    }
 
     public function role()
     {
@@ -26,11 +43,11 @@ class User extends Authenticatable
         return $this->hasMany(Track::class, 'driver_id');
     }
 
-    public function hasAnyRelationship() {
-    if ($this->tracks()->exists()) { 
-        return true;
+    public function hasAnyRelationship()
+    {
+        if ($this->tracks()->exists()) {
+            return true;
+        }
+        return false;
     }
-    
-    return false; 
-}
 }

@@ -24,4 +24,9 @@ class TrackingSystem extends Model
     {
         return $this->belongsTo(TravelDocument::class);
     }
+
+    public function locations()
+    {
+        return $this->hasMany(Location::class, 'track_id', 'track_id');
+    }
 }

@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <!-- Fonts and icons (mengikuti Kaiadmin) -->
   <script src="<?php echo e(asset('assets/js/plugin/webfont/webfont.min.js')); ?>"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
     WebFont.load({
       google: { families: ["Public Sans:300,400,500,600,700"] },
@@ -35,6 +36,8 @@
   <link rel="stylesheet" href="<?php echo e(asset('assets/css/bootstrap.min.css')); ?>" />
   <link rel="stylesheet" href="<?php echo e(asset('assets/css/plugins.min.css')); ?>" />
   <link rel="stylesheet" href="<?php echo e(asset('assets/css/kaiadmin.min.css')); ?>" />
+
+
 
   <!-- Custom CSS (jika ada tambahan di masa depan) -->
   <?php echo $__env->yieldPushContent('styles'); ?>
@@ -93,9 +96,10 @@
 
       <!-- Footer -->
       <footer class="footer">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <div class="container-fluid d-flex justify-content-between">
           <div class="copyright">
-            &copy; <?php echo e(date('Y')); ?> RekaTrack. All rights reserved.
+            &copy; <?php echo e(date('Y')); ?> RekaTrack by <b>TI Rekaindo</b>. All rights reserved.
           </div>
         </div>
       </footer>
