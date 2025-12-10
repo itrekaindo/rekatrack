@@ -38,7 +38,6 @@
   <link rel="stylesheet" href="{{ asset('assets/css/kaiadmin.min.css') }}" />
 
 
-
   <!-- Custom CSS (jika ada tambahan di masa depan) -->
   @stack('styles')
 </head>

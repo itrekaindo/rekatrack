@@ -13,23 +13,53 @@
       </div>
       <div class="card-body">
         <div class="row g-3">
+          <!-- Kolom Kiri: Informasi Utama -->
           <div class="col-sm-6">
-            <p class="text-muted mb-1">Kepada</p>
-            <h5>{{ $travelDocument->send_to ?? '-' }}</h5>
+            <div class="mb-3">
+              <p class="text-muted mb-1">Kepada</p>
+              <h5>{{ $travelDocument->send_to ?? '-' }}</h5>
+            </div>
+            <div class="mb-3">
+              <p class="text-muted mb-1">Proyek</p>
+              <h5>{{ $travelDocument->project ?? '-' }}</h5>
+            </div>
+            <div class="mb-3">
+              <p class="text-muted mb-1">Tanggal SJN</p>
+              <h5>
+                @if($travelDocument->date_no_travel_document)
+                  {{ \Carbon\Carbon::parse($travelDocument->date_no_travel_document)->format('d/m/Y') }}
+                @else
+                  -
+                @endif
+              </h5>
+            </div>
           </div>
-          <div class="col-sm-6">
-            <p class="text-muted mb-1">Proyek</p>
-            <h5>{{ $travelDocument->project ?? '-' }}</h5>
-          </div>
-          <div class="col-sm-6">
-            <p class="text-muted mb-1">Tanggal SJN</p>
-            <h5>
-              @if($travelDocument->date_no_travel_document)
-                {{ \Carbon\Carbon::parse($travelDocument->date_no_travel_document)->format('d/m/Y') }}
-              @else
-                -
-              @endif
-            </h5>
+
+          <!-- Kolom Kanan: Waktu Mulai & Selesai Kirim -->
+          <div class="col-sm-6 d-flex flex-column justify-content-between">
+            <!-- Waktu Mulai Kirim -->
+            <div class="mb-3">
+              <p class="text-muted mb-1">Waktu Mulai Kirim</p>
+              <h5>
+                @if($travelDocument->start_time)
+                  {{ \Carbon\Carbon::parse($travelDocument->start_time)->format('d/m/Y H:i') }}
+                @else
+                  <span class="text-muted">-</span>
+                @endif
+              </h5>
+            </div>
+
+            <!-- Waktu Selesai Kirim -->
+            <div class="mb-0">
+              <p class="text-muted mb-1">Waktu Selesai Kirim</p>
+              <h5>
+                @if($travelDocument->end_time)
+                  {{ \Carbon\Carbon::parse($travelDocument->end_time)->format('d/m/Y H:i') }}
+                @else
+                  <span class="text-muted">-</span>
+                @endif
+              </h5>
+            </div>
           </div>
         </div>
       </div>

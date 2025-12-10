@@ -38,7 +38,6 @@
   <link rel="stylesheet" href="<?php echo e(asset('assets/css/kaiadmin.min.css')); ?>" />
 
 
-
   <!-- Custom CSS (jika ada tambahan di masa depan) -->
   <?php echo $__env->yieldPushContent('styles'); ?>
 </head>

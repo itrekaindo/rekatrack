@@ -25,6 +25,8 @@
     </div>
     <!-- End Logo Header -->
   </div>
+
+  <!-- Sidebar Content (Menu Utama) -->
   <div class="sidebar-wrapper scrollbar scrollbar-inner">
     <div class="sidebar-content">
       <ul class="nav nav-secondary">
@@ -46,26 +48,35 @@
 
         <!-- Menu: Tracking -->
         <li class="nav-item {{ request()->routeIs('tracking.*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('tracking.index') }}" title="Tracking">
+          <a class="nav-link" href="{{ route('tracking.index') }}" title="Tracking">
             <i class="fas fa-map-marked-alt"></i>
             <p>Tracking</p>
-        </a>
+          </a>
+        </li>
+
+        <!-- ✅ Menu: Trash (Hanya untuk Admin & Super Admin) -->
+
+        <li class="nav-item {{ request()->routeIs('shippings.trash') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('shippings.trash') }}" title="Trash Pengiriman">
+              <i class="fas fa-recycle"></i>
+              <p>Trash</p>
+            </a>
         </li>
 
         <!-- Menu: Manajemen User (Only for Super Admin) -->
         @if(auth()->check() && auth()->user()->role?->name == 'Super Admin')
-        <li class="nav-section">
-          <span class="sidebar-mini-icon">
-            <i class="fa fa-ellipsis-h"></i>
-          </span>
-          <h4 class="text-section">Administrator</h4>
-        </li>
-        <li class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-          <a class="nav-link" href="{{ route('users.index') }}" title="Manajemen User">
-            <i class="fas fa-users-cog"></i>
-            <p>Manajemen User</p>
-          </a>
-        </li>
+          <li class="nav-section">
+            <span class="sidebar-mini-icon">
+              <i class="fa fa-ellipsis-h"></i>
+            </span>
+            <h4 class="text-section">Administrator</h4>
+          </li>
+          <li class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('users.index') }}" title="Manajemen User">
+              <i class="fas fa-users-cog"></i>
+              <p>Manajemen User</p>
+            </a>
+          </li>
         @endif
       </ul>
     </div>

@@ -160,6 +160,8 @@
                                     <th>Kepada</th>
                                     <th>Proyek</th>
                                     <th>Status</th>
+                                    <th class="text-center">Waktu Mulai</th>          <!-- ✅ Baru -->
+                                    <th class="text-center">Waktu Selesai</th>        <!-- ✅ Baru -->
                                     <th class="text-center">Aksi</th>
                                 </tr>
                             </thead>
@@ -167,12 +169,9 @@
                                 <?php $__empty_1 = true; $__currentLoopData = $listTravelDocument; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $doc): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                     <tr class="shipping-row" data-status="<?php echo e($doc->status); ?>"
                                         data-date="<?php echo e($doc->date_no_travel_document); ?>">
-                                        <td class="text-center text-muted"><?php echo e($listTravelDocument->firstItem() + $index); ?>
-
-                                        </td>
+                                        <td class="text-center text-muted"><?php echo e($listTravelDocument->firstItem() + $index); ?></td>
                                         <td>
-                                            <a href="<?php echo e(route('shippings.detail', $doc->id)); ?>"
-                                                class="text-primary fw-bold">
+                                            <a href="<?php echo e(route('shippings.detail', $doc->id)); ?>" class="text-primary fw-bold">
                                                 <?php echo e($doc->no_travel_document ?: '-'); ?>
 
                                             </a>
@@ -202,6 +201,24 @@
                                                 <span class="badge badge-success">Terkirim</span>
                                             <?php endif; ?>
                                         </td>
+                                        <!-- ✅ Waktu Mulai -->
+                                        <td class="text-center">
+                                            <?php if($doc->start_time): ?>
+                                                <?php echo e(\Carbon\Carbon::parse($doc->start_time)->format('d/m/Y H:i')); ?>
+
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <!-- ✅ Waktu Selesai -->
+                                        <td class="text-center">
+                                            <?php if($doc->end_time): ?>
+                                                <?php echo e(\Carbon\Carbon::parse($doc->end_time)->format('d/m/Y H:i')); ?>
+
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td class="text-center">
                                             <div class="form-button-action">
                                                 <a href="<?php echo e(route('shippings.detail', $doc->id)); ?>"
@@ -217,7 +234,7 @@
                                     </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                     <tr>
-                                        <td colspan="7" class="text-center py-5">
+                                        <td colspan="9" class="text-center py-5"> <!-- ⚠️ Ubah colspan jadi 9 -->
                                             <i class="fas fa-inbox fs-1 d-block mb-3 text-muted"></i>
                                             <p class="mb-0 text-muted">Tidak ada data pengiriman</p>
                                         </td>

@@ -11,24 +11,56 @@
       </div>
       <div class="card-body">
         <div class="row g-3">
+          <!-- Kolom Kiri: Informasi Utama -->
           <div class="col-sm-6">
-            <p class="text-muted mb-1">Kepada</p>
-            <h5><?php echo e($travelDocument->send_to ?? '-'); ?></h5>
-          </div>
-          <div class="col-sm-6">
-            <p class="text-muted mb-1">Proyek</p>
-            <h5><?php echo e($travelDocument->project ?? '-'); ?></h5>
-          </div>
-          <div class="col-sm-6">
-            <p class="text-muted mb-1">Tanggal SJN</p>
-            <h5>
-              <?php if($travelDocument->date_no_travel_document): ?>
-                <?php echo e(\Carbon\Carbon::parse($travelDocument->date_no_travel_document)->format('d/m/Y')); ?>
+            <div class="mb-3">
+              <p class="text-muted mb-1">Kepada</p>
+              <h5><?php echo e($travelDocument->send_to ?? '-'); ?></h5>
+            </div>
+            <div class="mb-3">
+              <p class="text-muted mb-1">Proyek</p>
+              <h5><?php echo e($travelDocument->project ?? '-'); ?></h5>
+            </div>
+            <div class="mb-3">
+              <p class="text-muted mb-1">Tanggal SJN</p>
+              <h5>
+                <?php if($travelDocument->date_no_travel_document): ?>
+                  <?php echo e(\Carbon\Carbon::parse($travelDocument->date_no_travel_document)->format('d/m/Y')); ?>
 
-              <?php else: ?>
-                -
-              <?php endif; ?>
-            </h5>
+                <?php else: ?>
+                  -
+                <?php endif; ?>
+              </h5>
+            </div>
+          </div>
+
+          <!-- Kolom Kanan: Waktu Mulai & Selesai Kirim -->
+          <div class="col-sm-6 d-flex flex-column justify-content-between">
+            <!-- Waktu Mulai Kirim -->
+            <div class="mb-3">
+              <p class="text-muted mb-1">Waktu Mulai Kirim</p>
+              <h5>
+                <?php if($travelDocument->start_time): ?>
+                  <?php echo e(\Carbon\Carbon::parse($travelDocument->start_time)->format('d/m/Y H:i')); ?>
+
+                <?php else: ?>
+                  <span class="text-muted">-</span>
+                <?php endif; ?>
+              </h5>
+            </div>
+
+            <!-- Waktu Selesai Kirim -->
+            <div class="mb-0">
+              <p class="text-muted mb-1">Waktu Selesai Kirim</p>
+              <h5>
+                <?php if($travelDocument->end_time): ?>
+                  <?php echo e(\Carbon\Carbon::parse($travelDocument->end_time)->format('d/m/Y H:i')); ?>
+
+                <?php else: ?>
+                  <span class="text-muted">-</span>
+                <?php endif; ?>
+              </h5>
+            </div>
           </div>
         </div>
       </div>

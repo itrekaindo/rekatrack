@@ -500,4 +500,34 @@ class AdminWebController extends Controller
 
         return redirect()->back()->with('error', $message);
     }
+
+    /**
+     * Display trashed travel documents
+     */
+    public function shippingsTrash()
+    {
+        $trashedDocuments = TravelDocument::onlyTrashed()
+            ->with('items')
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(10);
+
+        $breadcrumbs = [
+            ['label' => 'Home', 'url' => route('shippings.index')],
+            ['label' => 'Manajemen Pengiriman', 'url' => route('shippings.index')],
+            ['label' => 'Trash', 'url' => '#']
+        ];
+
+        return view('General.shippings-trash', compact('trashedDocuments', 'breadcrumbs'));
+    }
+
+    /**
+     * Restore a trashed travel document
+     */
+    public function shippingsRestore($id)
+    {
+        $travelDocument = TravelDocument::withTrashed()->findOrFail($id);
+        $travelDocument->restore();
+
+        return redirect()->route('shippings.trash')->with('success', 'Data pengiriman berhasil direstore.');
+    }
 }

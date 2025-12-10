@@ -162,6 +162,8 @@
                                     <th>Kepada</th>
                                     <th>Proyek</th>
                                     <th>Status</th>
+                                    <th class="text-center">Waktu Mulai</th>          <!-- ✅ Baru -->
+                                    <th class="text-center">Waktu Selesai</th>        <!-- ✅ Baru -->
                                     <th class="text-center">Aksi</th>
                                 </tr>
                             </thead>
@@ -169,11 +171,9 @@
                                 @forelse($listTravelDocument as $index => $doc)
                                     <tr class="shipping-row" data-status="{{ $doc->status }}"
                                         data-date="{{ $doc->date_no_travel_document }}">
-                                        <td class="text-center text-muted">{{ $listTravelDocument->firstItem() + $index }}
-                                        </td>
+                                        <td class="text-center text-muted">{{ $listTravelDocument->firstItem() + $index }}</td>
                                         <td>
-                                            <a href="{{ route('shippings.detail', $doc->id) }}"
-                                                class="text-primary fw-bold">
+                                            <a href="{{ route('shippings.detail', $doc->id) }}" class="text-primary fw-bold">
                                                 {{ $doc->no_travel_document ?: '-' }}
                                             </a>
                                         </td>
@@ -200,6 +200,22 @@
                                                 <span class="badge badge-success">Terkirim</span>
                                             @endif
                                         </td>
+                                        <!-- ✅ Waktu Mulai -->
+                                        <td class="text-center">
+                                            @if($doc->start_time)
+                                                {{ \Carbon\Carbon::parse($doc->start_time)->format('d/m/Y H:i') }}
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <!-- ✅ Waktu Selesai -->
+                                        <td class="text-center">
+                                            @if($doc->end_time)
+                                                {{ \Carbon\Carbon::parse($doc->end_time)->format('d/m/Y H:i') }}
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
                                         <td class="text-center">
                                             <div class="form-button-action">
                                                 <a href="{{ route('shippings.detail', $doc->id) }}"
@@ -215,7 +231,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center py-5">
+                                        <td colspan="9" class="text-center py-5"> <!-- ⚠️ Ubah colspan jadi 9 -->
                                             <i class="fas fa-inbox fs-1 d-block mb-3 text-muted"></i>
                                             <p class="mb-0 text-muted">Tidak ada data pengiriman</p>
                                         </td>

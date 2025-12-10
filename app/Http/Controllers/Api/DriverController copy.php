@@ -14,13 +14,13 @@ use Illuminate\Http\Request;
 
 class DriverController extends Controller
 {
-    public function forgotPassword(Request $request)
-    {
+    public function forgotPassword(Request $request){
         $request->validate([
             'email' => 'required|email',
             'password' => 'required|min:6|confirmed',
         ]);
 
+        // Cari user berdasarkan email
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
@@ -29,6 +29,7 @@ class DriverController extends Controller
             ], 404);
         }
 
+        // Update password
         $user->update([
             'password' => Hash::make($request->password),
         ]);
@@ -38,17 +39,16 @@ class DriverController extends Controller
         ]);
     }
 
-    public function showTravelDocuments()
-    {
+
+    public function showTravelDocuments(){
         $suratJalanList = TravelDocument::with('items')->get();
 
         return response()->json([
             'data' => $suratJalanList,
         ]);
     }
-
-    public function showDetailTravelDocument($id)
-    {
+    
+    public function showDetailTravelDocument($id) {
         $suratJalan = TravelDocument::where('id', $id)->with(['items'])->first();
 
         if (!$suratJalan) {
@@ -62,8 +62,8 @@ class DriverController extends Controller
         ]);
     }
 
-    public function sendLocation(Request $request)
-    {
+    // pada db masing menggunakan track id untuk bagian ini
+    public function sendLocation(Request $request){
         $request->validate([
             'travel_document_id' => 'required|array',
             'travel_document_id.*' => 'exists:travel_document,id',
@@ -79,23 +79,24 @@ class DriverController extends Controller
         foreach ($request->travel_document_id as $documentId) {
             $travelDocument = TravelDocument::find($documentId);
 
+            // Cek status surat jalan, jika sudah terkirim skip
             if ($travelDocument->status === 'Terkirim') {
                 $responses[] = [
                     'travel_document_id' => $documentId,
                     'message' => 'Surat jalan sudah terkirim, pengiriman lokasi tidak dapat dilakukan.',
                     'status' => 'error',
                 ];
-                continue;
+                continue; // skip proses berikutnya untuk dokumen ini
             }
 
+            // Cari track aktif driver terkait dokumen
             $track = Track::where('driver_id', $driverId)
                 ->whereHas('trackingSystems', function ($query) use ($documentId) {
                     $query->where('travel_document_id', $documentId);
-                })
-                ->latest()
-                ->first();
+                })->latest()->first();
 
             if (!$track) {
+                // Buat track baru dan tracking system aktif
                 $track = Track::create([
                     'driver_id' => $driverId,
                     'time_stamp' => now(),
@@ -109,6 +110,7 @@ class DriverController extends Controller
                     'status' => 'active',
                 ]);
             } else {
+                // Update atau buat tracking system jadi aktif
                 TrackingSystem::updateOrCreate(
                     [
                         'track_id' => $track->id,
@@ -120,11 +122,13 @@ class DriverController extends Controller
                     ]
                 );
 
+                // Update status track jika belum aktif
                 if ($track->status !== 'active') {
                     $track->update(['status' => 'active']);
                 }
             }
 
+            // Simpan lokasi terbaru
             Location::create([
                 'track_id' => $track->id,
                 'latitude' => $request->latitude,
@@ -132,12 +136,20 @@ class DriverController extends Controller
                 'time_stamp' => now(),
             ]);
 
-            // ✅ Set start_time hanya jika belum ada
-            $updates = ['status' => 'Sedang dikirim'];
+
             if (is_null($travelDocument->start_time)) {
-                $updates['start_time'] = now();
+                $travelDocument->update([
+                    'status' => 'Sedang dikirim',
+                    'start_time' => now(),
+                ]);
+            } else {
+                // Hanya update status jika perlu (opsional)
+                $travelDocument->update(['status' => 'Sedang dikirim']);
             }
-            $travelDocument->update($updates);
+            // // Update status travel document jadi Sedang dikirim
+            // $travelDocument->update([
+            //     'status' => 'Sedang dikirim',
+            // ]);
 
             $responses[] = [
                 'travel_document_id' => $documentId,
@@ -155,8 +167,10 @@ class DriverController extends Controller
         ], 201);
     }
 
-    public function updateStatusSendSJN(Request $request)
-    {
+
+
+    // Update status tracking system untuk banyak dokumen
+    public function updateStatusSendSJN(Request $request) {
         $request->validate([
             'travel_document_id' => 'required|array',
             'travel_document_id.*' => 'exists:travel_document,id',
@@ -167,6 +181,7 @@ class DriverController extends Controller
         $responses = [];
 
         foreach ($request->travel_document_id as $documentId) {
+            // Ambil TrackingSystem terbaru
             $trackingSystem = TrackingSystem::where('travel_document_id', $documentId)
                 ->orderBy('time_stamp', 'desc')
                 ->first();
@@ -189,12 +204,16 @@ class DriverController extends Controller
                 continue;
             }
 
+            // Update status TrackingSystem
             $trackingSystem->update([
                 'status' => 'non-active',
                 'time_stamp' => now(),
             ]);
 
+            // Simpan lokasi terakhir ke table Location (jika track tersedia)
             if ($trackingSystem->track) {
+                $track = $trackingSystem->track;
+
                 Location::create([
                     'track_id' => $trackingSystem->track->id,
                     'latitude' => $request->latitude,
@@ -202,12 +221,10 @@ class DriverController extends Controller
                     'time_stamp' => now(),
                 ]);
 
-                $allNonActive = $trackingSystem->track->trackingSystems()
-                    ->where('status', '!=', 'non-active')
-                    ->count() === 0;
+                $allNonActive = $track->trackingSystems()->where('status', '!=', 'non-active')->count() === 0;
 
-                if ($allNonActive && $trackingSystem->track->status !== 'non-active') {
-                    $trackingSystem->track->update(['status' => 'non-active']);
+                if ($allNonActive && $track->status !== 'non-active') {
+                    $track->update(['status' => 'non-active']);
                 }
             }
 
@@ -216,6 +233,7 @@ class DriverController extends Controller
                 'message' => 'Status berhasil diubah menjadi non-active dan lokasi disimpan.',
                 'status' => 'non-active',
             ];
+            
         }
 
         return response()->json([
@@ -224,8 +242,7 @@ class DriverController extends Controller
         ]);
     }
 
-    public function completeDelivery(Request $request)
-    {
+    public function completeDelivery(Request $request){
         $request->validate([
             'travel_document_id' => 'required|array',
             'travel_document_id.*' => 'exists:travel_document,id',
@@ -238,9 +255,7 @@ class DriverController extends Controller
         foreach ($request->travel_document_id as $travelDocumentId) {
             $tracking = Track::whereHas('trackingSystems', function ($query) use ($travelDocumentId) {
                 $query->where('travel_document_id', $travelDocumentId);
-            })
-            ->latest()
-            ->first();
+            })->latest()->first();
 
             if (!$tracking) {
                 $responses[] = [
@@ -250,38 +265,10 @@ class DriverController extends Controller
                 continue;
             }
 
-            $travelDocument = TravelDocument::find($travelDocumentId);
-
-            if (is_null($travelDocument->start_time)) {
-                $responses[] = [
-                    'travel_document_id' => $travelDocumentId,
-                    'message' => 'Pengiriman belum dimulai.',
-                ];
-                continue;
-            }
-
-            if (!is_null($travelDocument->end_time)) {
-                $responses[] = [
-                    'travel_document_id' => $travelDocumentId,
-                    'message' => 'Pengiriman sudah selesai sebelumnya.',
-                ];
-                continue;
-            }
-
-            $travelDocument->update([
-                'status' => 'Terkirim',
-                'end_time' => now(),
-            ]);
-
             $tracking->update(['status' => 'non-active']);
 
-            // Simpan lokasi terakhir sebagai penanda selesai (opsional tapi baik)
-            Location::create([
-                'track_id' => $tracking->id,
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'time_stamp' => now(),
-            ]);
+            $travelDocument = TravelDocument::find($travelDocumentId);
+            $travelDocument->update(['status' => 'Terkirim']);
 
             $responses[] = [
                 'travel_document_id' => $travelDocumentId,
