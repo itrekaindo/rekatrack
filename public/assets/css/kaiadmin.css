@@ -3421,6 +3421,13 @@ label.error {
 .badge-danger {
   background-color: #F25961; }
 
+.badge-status {
+    display: inline-block;
+    min-width: 130px;
+    text-align: center;
+    padding: 6px 12px;
+    font-size: 0.85rem; }
+
 /*     Dropdown    */
 .dropdown-menu {
   border: 0px;

@@ -11,6 +11,8 @@ use App\Models\TravelDocument;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
+use App\Models\DeliveryConfirmation;
+use Carbon\Carbon;
 
 class DriverController extends Controller
 {
@@ -125,12 +127,48 @@ class DriverController extends Controller
                 }
             }
 
+            // perhitungan jarak
+            $lastLocation = Location::where('track_id', $track->id)
+                ->orderBy('time_stamp', 'desc')
+                ->first();
+            // hitung jarak dari lokasi terakhir
+            $distanceFromLast = 0;
+
+            $MIN_DISTANCE_KM = 0.1; // 0.1km = 100 meter
+            $MIN_TIME_INTERVAL_SECONDS = 30; // 30 detik
+            $MIN_STOP_TIME_SECONDS = 60; // 60 detik
+
+            if ($lastLocation) {
+                $distanceFromLast = $this->calculateDistance(
+                    $lastLocation->latitude, $lastLocation->longitude,
+                    $request->latitude, $request->longitude
+                );
+                $secondsDiff = now()->diffInSeconds($lastLocation->time_stamp);
+
+                if ($secondsDiff > $MIN_STOP_TIME_SECONDS) {
+                    // Simpan jika waktu lama (berhenti), abaikan jarak
+                } elseif ($distanceFromLast < $MIN_DISTANCE_KM && $secondsDiff < $MIN_TIME_INTERVAL_SECONDS && $track->locations()->count() > 0) {
+                    $responses[] = [
+                        'travel_document_id' => $documentId,
+                        'message' => 'Lokasi terlalu dekat (<100m) atau terlalu cepat, tidak disimpan.',
+                        'distance_m' => round($distanceFromLast * 1000, 1),
+                        'status' => 'skipped',
+                    ];
+                    continue;
+                }
+            }
+
+            // $isCheckpoint = ($track->locations()->count() === 0) ? 1 : 0;
+            $isCheckpoint = ($track->locations()->count() === 0 || $secondsDiff > $MIN_STOP_TIME_SECONDS) ? 1 : 0;
+
             Location::create([
                 'track_id' => $track->id,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'time_stamp' => now(),
-            ]);
+                'is_checkpoint' => $isCheckpoint,
+                'distance_from_last' => round($distanceFromLast * 1000, 1), // dalam meter
+                ]);
 
             // ✅ Set start_time hanya jika belum ada
             $updates = ['status' => 'Sedang dikirim'];
@@ -231,6 +269,10 @@ class DriverController extends Controller
             'travel_document_id.*' => 'exists:travel_document,id',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
+            'receiver_name' => 'required|string|max:255',
+            'received_at' => 'required|date',
+            'note' => 'nullable|string',
+            'photo_path' => 'required|string|max:255',
         ]);
 
         $responses = [];
@@ -275,12 +317,38 @@ class DriverController extends Controller
 
             $tracking->update(['status' => 'non-active']);
 
+            $receivedAt = Carbon::parse($request->received_at)
+                ->setTimezone(config('app.timezone'))
+                ->format('Y-m-d H:i:s');
+
+            DeliveryConfirmation::create([
+                'travel_document_id' => $travelDocumentId,
+                'receiver_name' => $request->receiver_name,
+                'received_at' => $receivedAt,
+                'note' => $request->note,
+                'photo_path' => $request->photo_path,
+            ]);
+
+            // PERBAIKAN: Ambil last location untuk hitung distance
+            $lastLocation = Location::where('track_id', $tracking->id)
+                ->orderBy('time_stamp', 'desc')
+                ->first();
+            $distanceFromLast = 0;
+            if ($lastLocation) {
+                $distanceFromLast = $this->calculateDistance(
+                    $lastLocation->latitude, $lastLocation->longitude,
+                    $request->latitude, $request->longitude
+                );
+            }
+
             // Simpan lokasi terakhir sebagai penanda selesai (opsional tapi baik)
             Location::create([
                 'track_id' => $tracking->id,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'time_stamp' => now(),
+                'is_checkpoint' => 1, // Mark as end checkpoint
+                'distance_from_last' => $distanceFromLast,
             ]);
 
             $responses[] = [
@@ -294,6 +362,70 @@ class DriverController extends Controller
         return response()->json([
             'message' => 'Proses penyelesaian pengiriman selesai.',
             'data' => $responses,
+        ]);
+    }
+
+    public function showByScanCode($code)
+    {
+        if (!str_starts_with($code, 'SJNID:')) {
+            return response()->json(['message' => 'Format QR tidak valid'], 400);
+        }
+
+        $id = substr($code, 7); // ekstrak dari "SJNID:22"
+
+        if (!is_numeric($id)) {
+            return response()->json(['message' => 'ID tidak valid'], 400);
+        }
+
+        $travelDocument = TravelDocument::where('id', (int)$id)
+            ->with('items') // jika ada relasi items
+            ->first();
+
+        if (!$travelDocument) {
+            return response()->json(['message' => 'Dokumen tidak ditemukan'], 404);
+        }
+
+        return response()->json(['data' => $travelDocument]);
+    }
+
+    public function uploadDeliveryPhoto(Request $request)
+    {
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+        ]);
+
+        $path = $request->file('photo')->store('delivery_photos', 'public');
+
+        return response()->json([
+            'photo_path' => $path,
+        ]);
+    }
+    // fungsi bantu untuk menghitung jarak antara dua koordinat (Haversine Formula)
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2): float
+    {
+        $R = 6371; // Radius bumi dalam km
+        $latDiff = deg2rad($lat2 - $lat1);
+        $lonDiff = deg2rad($lon2 - $lon1);
+        $a = sin($latDiff / 2) * sin($latDiff / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($lonDiff / 2) * sin($lonDiff / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return $R * $c;
+    }
+
+    public function showDeliveryConfirmation($id)
+    {
+        $confirmation = DeliveryConfirmation::where('travel_document_id', $id)->first();
+        if (!$confirmation) {
+            return response()->json([
+                'message' => 'Bukti pengiriman tidak ditemukan untuk surat jalan ini',
+                'error' => 'not_found'
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => $confirmation,
+            'photo_url' => $confirmation->photo_path ? asset('storage/' . $confirmation->photo_path) : null,
         ]);
     }
 }

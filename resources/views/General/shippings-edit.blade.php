@@ -15,18 +15,45 @@
           @csrf
           @method('PUT')
 
-          <!-- Nomor SJN di atas (prioritas utama) -->
+          <!-- Nomor SJN dan Tanggal Dokumen -->
           <div class="row mb-4">
             <div class="col-md-6">
               <label class="form-label">Nomor SJN <span class="text-danger">*</span></label>
               <input
                 type="text"
                 name="numberSJN"
+                id="numberSJN"
                 value="{{ old('numberSJN', $travelDocument->no_travel_document) }}"
-                class="form-control form-control-lg"
+                class="form-control form-control-lg @error('numberSJN') is-invalid @enderror"
                 placeholder="Masukkan nomor surat jalan"
                 required
               />
+              @error('numberSJN')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
+              <small class="text-muted">Untuk Save As, pastikan menggunakan nomor yang berbeda dari dokumen yang sudah ada.</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Tanggal Dokumen</label>
+              <input
+                type="date"
+                name="documentDate"
+                id="documentDate"
+                value="{{ old('documentDate', $travelDocument->document_date ? \Carbon\Carbon::parse($travelDocument->document_date)->format('Y-m-d') : '') }}"
+                class="form-control form-control-lg @error('documentDate') is-invalid @enderror"
+                {{-- max="{{ date('Y-m-d') }}" --}}
+              />
+              @error('documentDate')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
+              <small class="text-muted">
+                @if($travelDocument->is_backdate)
+                  <span class="badge badge-warning">
+                    <i class="fas fa-history"></i> Backdate
+                  </span>
+                @endif
+                Tanggal posting: {{ $travelDocument->posting_date ? \Carbon\Carbon::parse($travelDocument->posting_date)->format('d/m/Y') : '-' }} (tidak bisa diubah)
+              </small>
             </div>
           </div>
 
@@ -38,10 +65,13 @@
                 type="text"
                 name="sendTo"
                 value="{{ old('sendTo', $travelDocument->send_to) }}"
-                class="form-control"
+                class="form-control @error('sendTo') is-invalid @enderror"
                 placeholder="Nama penerima"
                 required
               />
+              @error('sendTo')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
             </div>
             <div class="col-md-6">
               <label class="form-label">Nomor Ref <span class="text-danger">*</span></label>
@@ -49,10 +79,13 @@
                 type="text"
                 name="numberRef"
                 value="{{ old('numberRef', $travelDocument->reference_number) }}"
-                class="form-control"
+                class="form-control @error('numberRef') is-invalid @enderror"
                 placeholder="Nomor referensi"
                 required
               />
+              @error('numberRef')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
             </div>
             <div class="col-md-6">
               <label class="form-label">Proyek <span class="text-danger">*</span></label>
@@ -60,10 +93,13 @@
                 type="text"
                 name="projectName"
                 value="{{ old('projectName', $travelDocument->project) }}"
-                class="form-control"
+                class="form-control @error('projectName') is-invalid @enderror"
                 placeholder="Nama proyek"
                 required
               />
+              @error('projectName')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
             </div>
             <div class="col-md-6">
               <label class="form-label">Nomor PO <span class="text-danger">*</span></label>
@@ -71,10 +107,13 @@
                 type="text"
                 name="poNumber"
                 value="{{ old('poNumber', $travelDocument->po_number) }}"
-                class="form-control"
+                class="form-control @error('poNumber') is-invalid @enderror"
                 placeholder="Nomor purchase order"
                 required
               />
+              @error('poNumber')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
             </div>
           </div>
 
@@ -100,10 +139,13 @@
                           type="text"
                           name="itemName[]"
                           value="{{ $item['itemName'] }}"
-                          class="form-control"
+                          class="form-control @error("itemName.$index") is-invalid @enderror"
                           placeholder="Contoh: Baut M10"
                           required
                         />
+                        @error("itemName.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-2">
                         <label class="form-label">Kode Barang <span class="text-danger">*</span></label>
@@ -111,14 +153,17 @@
                           type="text"
                           name="itemCode[]"
                           value="{{ $item['itemCode'] }}"
-                          class="form-control"
+                          class="form-control @error("itemCode.$index") is-invalid @enderror"
                           placeholder="SKU/Part No"
                           required
                         />
+                        @error("itemCode.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-2">
                         <label class="form-label">Satuan <span class="text-danger">*</span></label>
-                        <select name="unitType[]" class="form-select" required>
+                        <select name="unitType[]" class="form-select @error("unitType.$index") is-invalid @enderror" required>
                           <option value="">-- pilih --</option>
                           @foreach ($units as $unit)
                             <option value="{{ $unit->id }}" {{ $item['unitType'] == $unit->id ? 'selected' : '' }}>
@@ -126,6 +171,9 @@
                             </option>
                           @endforeach
                         </select>
+                        @error("unitType.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-1">
                         <label class="form-label">Qty Kirim</label>
@@ -133,19 +181,25 @@
                           type="number"
                           name="quantitySend[]"
                           value="{{ $item['quantitySend'] }}"
-                          class="form-control"
+                          class="form-control @error("quantitySend.$index") is-invalid @enderror"
                           placeholder="0"
                         />
+                        @error("quantitySend.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-1">
                         <label class="form-label">Qty PO</label>
                         <input
-                          type="number"
+                          type="text"
                           name="qtyPreOrder[]"
                           value="{{ $item['qtyPreOrder'] }}"
-                          class="form-control"
-                          placeholder="0"
+                          class="form-control @error("qtyPreOrder.$index") is-invalid @enderror"
+                          placeholder="-"
                         />
+                        @error("qtyPreOrder.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-2">
                         <label class="form-label">Total Kirim <span class="text-danger">*</span></label>
@@ -153,10 +207,13 @@
                           type="number"
                           name="totalSend[]"
                           value="{{ $item['totalSend'] }}"
-                          class="form-control"
+                          class="form-control @error("totalSend.$index") is-invalid @enderror"
                           placeholder="0"
                           required
                         />
+                        @error("totalSend.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-3">
                         <label class="form-label">Deskripsi <span class="text-danger">*</span></label>
@@ -164,10 +221,13 @@
                           type="text"
                           name="description[]"
                           value="{{ $item['description'] }}"
-                          class="form-control"
+                          class="form-control @error("description.$index") is-invalid @enderror"
                           placeholder="Spesifikasi barang"
                           required
                         />
+                        @error("description.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-3">
                         <label class="form-label">Keterangan</label>
@@ -175,9 +235,12 @@
                           type="text"
                           name="information[]"
                           value="{{ $item['information'] }}"
-                          class="form-control"
+                          class="form-control @error("information.$index") is-invalid @enderror"
                           placeholder="Opsional"
                         />
+                        @error("information.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-12 d-flex justify-content-end mt-2">
                         <button type="button" class="btn btn-sm btn-outline-danger remove-item"
@@ -197,9 +260,17 @@
             <a href="{{ route('shippings.index') }}" class="btn btn-light">
               <i class="fas fa-arrow-left me-1"></i> Batal
             </a>
-            <button type="submit" class="btn btn-success btn-round">
-              <i class="fas fa-save me-1"></i> Simpan Perubahan
-            </button>
+            <div class="d-flex gap-2">
+              <!-- Tombol Update (Default) -->
+              <button type="submit" class="btn btn-success btn-round">
+                <i class="fas fa-save me-1"></i> Simpan Perubahan
+              </button>
+
+              <!-- Tombol Save As (Baru) -->
+              <button type="button" class="btn btn-info btn-round" onclick="saveAsNewDocument()">
+                <i class="fas fa-copy me-1"></i> Simpan Sebagai Baru
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -213,6 +284,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('itemsContainer');
     const addItemBtn = document.getElementById('addItemBtn');
+    const documentDateInput = document.getElementById('documentDate');
     let itemCount = {{ count($items) }};
     const units = @json($units);
 
@@ -248,7 +320,7 @@
             </div>
             <div class="col-md-1">
               <label class="form-label">Qty PO</label>
-              <input type="number" name="qtyPreOrder[]" class="form-control" placeholder="0" />
+              <input type="text" name="qtyPreOrder[]" class="form-control" placeholder="-" />
             </div>
             <div class="col-md-2">
               <label class="form-label">Total Kirim <span class="text-danger">*</span></label>
@@ -276,6 +348,20 @@
       document.getElementById('totalBarang').textContent = container.querySelectorAll('.item-row').length;
     }
 
+    // // Validasi tanggal tidak boleh lebih dari hari ini
+    // if (documentDateInput) {
+    //   documentDateInput.addEventListener('change', function() {
+    //     const selectedDate = new Date(this.value);
+    //     const today = new Date();
+    //     today.setHours(0, 0, 0, 0);
+
+    //     if (selectedDate > today) {
+    //       alert('Tanggal dokumen tidak boleh melebihi tanggal hari ini');
+    //       this.value = today.toISOString().split('T')[0];
+    //     }
+    //   });
+    // }
+
     addItemBtn.addEventListener('click', function () {
       if (itemCount >= 50) return;
       container.insertAdjacentHTML('beforeend', createNewItemRow());
@@ -295,5 +381,50 @@
 
     updateTotalBarang();
   });
+
+  // ============================================
+  // FUNGSI SAVE AS (BARU)
+  // ============================================
+  function saveAsNewDocument() {
+    const numberSJN = document.getElementById('numberSJN').value.trim();
+
+    // Validasi nomor SJN tidak boleh kosong
+    if (!numberSJN) {
+      alert('⚠️ Nomor SJN harus diisi terlebih dahulu!');
+      document.getElementById('numberSJN').focus();
+      return false;
+    }
+
+    // Konfirmasi kepada user
+    const confirmMessage = `Apakah Anda yakin ingin menyimpan sebagai dokumen baru?\n\n` +
+                          `📋 Nomor SJN: ${numberSJN}\n\n` +
+                          `⚠️ PENTING:\n` +
+                          `• Dokumen asli TIDAK akan berubah\n` +
+                          `• Dokumen baru akan dibuat dengan nomor di atas\n` +
+                          `• Pastikan nomor SJN berbeda dari dokumen yang sudah ada`;
+
+    if (!confirm(confirmMessage)) {
+      return false;
+    }
+
+    // Ambil form
+    const form = document.getElementById('editShippingForm');
+
+    // Ubah action form ke route save-as
+    form.action = "{{ route('shippings.save-as', $travelDocument->id) }}";
+
+    // Ubah method menjadi POST (bukan PUT)
+    const methodInput = form.querySelector('input[name="_method"]');
+    if (methodInput) {
+      methodInput.value = 'POST';
+    }
+
+    // Submit form
+    form.submit();
+
+    // Disable tombol untuk mencegah double submit
+    event.target.disabled = true;
+    event.target.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...';
+  }
 </script>
 @endpush

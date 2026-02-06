@@ -1,11 +1,9 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
 
 class TravelDocument extends Model
 {
@@ -14,12 +12,25 @@ class TravelDocument extends Model
     protected $table = 'travel_document';
 
     protected $fillable = [
-        'no_travel_document', 'date_no_travel_document', 'send_to', 'po_number', 'reference_number', 'project', 'status','start_time', 'end_time'
+        'no_travel_document',
+        'posting_date',
+        'document_date',
+        'is_backdate',
+        'send_to',
+        'po_number',
+        'reference_number',
+        'project',
+        'status',
+        'start_time',
+        'end_time'
     ];
 
     protected $dates = [
         'deleted_at',
-        'date_no_travel_document','start_time','end_time'
+        'posting_date',        // Dirubah dari date_no_travel_document
+        'document_date',       // Kolom baru
+        'start_time',
+        'end_time'
     ];
 
     public function items()
@@ -30,5 +41,10 @@ class TravelDocument extends Model
     public function trackingSystems()
     {
         return $this->hasMany(TrackingSystem::class);
+    }
+
+    public function deliveryConfirmation()
+    {
+        return $this->hasOne(DeliveryConfirmation::class);
     }
 }

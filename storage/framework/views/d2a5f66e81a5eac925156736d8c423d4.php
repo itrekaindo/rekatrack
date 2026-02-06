@@ -36,6 +36,7 @@
   <link rel="stylesheet" href="<?php echo e(asset('assets/css/bootstrap.min.css')); ?>" />
   <link rel="stylesheet" href="<?php echo e(asset('assets/css/plugins.min.css')); ?>" />
   <link rel="stylesheet" href="<?php echo e(asset('assets/css/kaiadmin.min.css')); ?>" />
+  
 
 
   <!-- Custom CSS (jika ada tambahan di masa depan) -->

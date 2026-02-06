@@ -14,7 +14,7 @@
         <form method="POST" action="{{ route('shippings.store') }}" id="shippingForm">
           @csrf
 
-          <!-- Nomor SJN di atas (prioritas utama) -->
+          <!-- Nomor SJN dan Tanggal Dokumen -->
           <div class="row mb-4">
             <div class="col-md-6">
               <label class="form-label">Nomor SJN <span class="text-danger">*</span></label>
@@ -22,10 +22,27 @@
                 type="text"
                 name="numberSJN"
                 value="{{ old('numberSJN') }}"
-                class="form-control form-control-lg"
+                class="form-control @error('numberSJN') is-invalid @enderror"
                 placeholder="Masukkan nomor surat jalan"
                 required
               />
+              @error('numberSJN')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Tanggal Dokumen</label>
+              <input
+                type="date"
+                name="documentDate"
+                value="{{ old('documentDate', date('Y-m-d')) }}"
+                class="form-control form-control-lg @error('documentDate') is-invalid @enderror"
+                {{-- max="{{ date('Y-m-d') }}" --}}
+              />
+              <small class="text-muted">Kosongkan untuk menggunakan tanggal hari ini</small>
+              @error('documentDate')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
             </div>
           </div>
 
@@ -37,10 +54,13 @@
                 type="text"
                 name="sendTo"
                 value="{{ old('sendTo') }}"
-                class="form-control"
+                class="form-control @error('sendTo') is-invalid @enderror"
                 placeholder="Nama penerima"
                 required
               />
+              @error('sendTo')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
             </div>
             <div class="col-md-6">
               <label class="form-label">Nomor Ref <span class="text-danger">*</span></label>
@@ -48,10 +68,13 @@
                 type="text"
                 name="numberRef"
                 value="{{ old('numberRef') }}"
-                class="form-control"
+                class="form-control @error('numberRef') is-invalid @enderror"
                 placeholder="Nomor referensi"
                 required
               />
+              @error('numberRef')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
             </div>
             <div class="col-md-6">
               <label class="form-label">Proyek <span class="text-danger">*</span></label>
@@ -59,10 +82,13 @@
                 type="text"
                 name="projectName"
                 value="{{ old('projectName') }}"
-                class="form-control"
+                class="form-control @error('projectName') is-invalid @enderror"
                 placeholder="Nama proyek"
                 required
               />
+              @error('projectName')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
             </div>
             <div class="col-md-6">
               <label class="form-label">Nomor PO <span class="text-danger">*</span></label>
@@ -70,10 +96,13 @@
                 type="text"
                 name="poNumber"
                 value="{{ old('poNumber') }}"
-                class="form-control"
+                class="form-control @error('poNumber') is-invalid @enderror"
                 placeholder="Nomor purchase order"
                 required
               />
+              @error('poNumber')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
             </div>
           </div>
 
@@ -99,10 +128,13 @@
                           type="text"
                           name="itemName[]"
                           value="{{ old("itemName.$index", $item['itemName']) }}"
-                          class="form-control"
+                          class="form-control @error("itemName.$index") is-invalid @enderror"
                           placeholder="Contoh: Baut M10"
                           required
                         />
+                        @error("itemName.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-2">
                         <label class="form-label">Kode Barang <span class="text-danger">*</span></label>
@@ -110,14 +142,17 @@
                           type="text"
                           name="itemCode[]"
                           value="{{ old("itemCode.$index", $item['itemCode']) }}"
-                          class="form-control"
+                          class="form-control @error("itemCode.$index") is-invalid @enderror"
                           placeholder="SKU/Part No"
                           required
                         />
+                        @error("itemCode.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-2">
                         <label class="form-label">Satuan <span class="text-danger">*</span></label>
-                        <select name="unitType[]" class="form-select" required>
+                        <select name="unitType[]" class="form-select @error("unitType.$index") is-invalid @enderror" required>
                           <option value="">-- pilih --</option>
                           @foreach ($units as $unit)
                             <option value="{{ $unit->id }}" {{ old("unitType.$index", $item['unitType']) == $unit->id ? 'selected' : '' }}>
@@ -125,6 +160,9 @@
                             </option>
                           @endforeach
                         </select>
+                        @error("unitType.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-1">
                         <label class="form-label">Qty Kirim</label>
@@ -132,19 +170,25 @@
                           type="number"
                           name="quantitySend[]"
                           value="{{ old("quantitySend.$index", $item['quantitySend']) }}"
-                          class="form-control"
+                          class="form-control @error("quantitySend.$index") is-invalid @enderror"
                           placeholder="0"
                         />
+                        @error("quantitySend.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-1">
                         <label class="form-label">Qty PO</label>
                         <input
-                          type="number"
+                          type="text"
                           name="qtyPreOrder[]"
                           value="{{ old("qtyPreOrder.$index", $item['qtyPreOrder']) }}"
-                          class="form-control"
-                          placeholder="0"
+                          class="form-control @error("qtyPreOrder.$index") is-invalid @enderror"
+                          placeholder="-"
                         />
+                        @error("qtyPreOrder.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-2">
                         <label class="form-label">Total Kirim <span class="text-danger">*</span></label>
@@ -152,10 +196,13 @@
                           type="number"
                           name="totalSend[]"
                           value="{{ old("totalSend.$index", $item['totalSend']) }}"
-                          class="form-control"
+                          class="form-control @error("totalSend.$index") is-invalid @enderror"
                           placeholder="0"
                           required
                         />
+                        @error("totalSend.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-3">
                         <label class="form-label">Deskripsi <span class="text-danger">*</span></label>
@@ -163,10 +210,13 @@
                           type="text"
                           name="description[]"
                           value="{{ old("description.$index", $item['description']) }}"
-                          class="form-control"
+                          class="form-control @error("description.$index") is-invalid @enderror"
                           placeholder="Spesifikasi barang"
                           required
                         />
+                        @error("description.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-3">
                         <label class="form-label">Keterangan</label>
@@ -174,9 +224,12 @@
                           type="text"
                           name="information[]"
                           value="{{ old("information.$index", $item['information']) }}"
-                          class="form-control"
+                          class="form-control @error("information.$index") is-invalid @enderror"
                           placeholder="Opsional"
                         />
+                        @error("information.$index")
+                          <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                       </div>
                       <div class="col-md-12 d-flex justify-content-end mt-2">
                         <button type="button" class="btn btn-sm btn-outline-danger remove-item"
@@ -212,6 +265,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('itemsContainer');
     const addItemBtn = document.getElementById('addItemBtn');
+    const documentDateInput = document.querySelector('input[name="documentDate"]');
     let itemCount = {{ count($items) }};
     const units = @json($units);
 
@@ -247,7 +301,7 @@
             </div>
             <div class="col-md-1">
               <label class="form-label">Qty PO</label>
-              <input type="number" name="qtyPreOrder[]" class="form-control" placeholder="0" />
+              <input type="text" name="qtyPreOrder[]" class="form-control" placeholder="-" />
             </div>
             <div class="col-md-2">
               <label class="form-label">Total Kirim <span class="text-danger">*</span></label>
@@ -274,6 +328,20 @@
     function updateTotalBarang() {
       document.getElementById('totalBarang').textContent = container.querySelectorAll('.item-row').length;
     }
+
+    // // Validasi tanggal tidak boleh lebih dari hari ini
+    // if (documentDateInput) {
+    //   documentDateInput.addEventListener('change', function() {
+    //     const selectedDate = new Date(this.value);
+    //     const today = new Date();
+    //     today.setHours(0, 0, 0, 0);
+
+    //     if (selectedDate > today) {
+    //       alert('Tanggal dokumen tidak boleh melebihi tanggal hari ini');
+    //       this.value = today.toISOString().split('T')[0];
+    //     }
+    //   });
+    // }
 
     addItemBtn.addEventListener('click', function () {
       if (itemCount >= 50) return;

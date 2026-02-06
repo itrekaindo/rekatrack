@@ -37,7 +37,7 @@ class ShippingsExport implements
     public function collection()
     {
         $query = TravelDocument::with(['items.unit'])
-            ->orderBy('date_no_travel_document', 'desc')
+            ->orderBy('posting_date', 'desc')
             ->orderBy('created_at', 'desc');
 
         // Apply date filters
@@ -123,16 +123,16 @@ class ShippingsExport implements
     {
         if ($this->startDate && $this->endDate) {
             // Filter by date range
-            $query->whereBetween('date_no_travel_document', [
+            $query->whereBetween('posting_date', [
                 Carbon::parse($this->startDate)->startOfDay(),
                 Carbon::parse($this->endDate)->endOfDay()
             ]);
         } elseif ($this->startDate) {
             // Filter from start date onwards
-            $query->where('date_no_travel_document', '>=', Carbon::parse($this->startDate)->startOfDay());
+            $query->where('posting_date', '>=', Carbon::parse($this->startDate)->startOfDay());
         } elseif ($this->endDate) {
             // Filter up to end date
-            $query->where('date_no_travel_document', '<=', Carbon::parse($this->endDate)->endOfDay());
+            $query->where('posting_date', '<=', Carbon::parse($this->endDate)->endOfDay());
         }
     }
 
@@ -143,7 +143,7 @@ class ShippingsExport implements
     {
         return [
             $travelDocument->no_travel_document,
-            $this->formatDate($travelDocument->date_no_travel_document),
+            $this->formatDate($travelDocument->posting_date),
             $travelDocument->send_to,
             $travelDocument->reference_number,
             $travelDocument->po_number,
@@ -167,7 +167,7 @@ class ShippingsExport implements
     {
         return [
             $travelDocument->no_travel_document,
-            $this->formatDate($travelDocument->date_no_travel_document),
+            $this->formatDate($travelDocument->posting_date),
             $travelDocument->send_to,
             $travelDocument->reference_number,
             $travelDocument->po_number,

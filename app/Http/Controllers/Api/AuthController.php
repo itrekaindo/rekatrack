@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -87,11 +89,40 @@ class AuthController extends Controller
     //     ]);
     // }
 
+    // public function user()
+    // {
+    //     return response()->json([
+    //         'message' => 'Success!',
+    //         'data' => Auth::user(),
+    //     ]);
+    // }
+
     public function user()
     {
+        $user = Auth::user();
+
+        // Load relasi jika perlu (misal role)
+        $user->load('role.division');
+
         return response()->json([
             'message' => 'Success!',
-            //'data' => Auth::user(),
+            'data' => [
+                'id' => $user->id,
+                'nip' => $user->nip,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone_number' => $user->phone_number,
+                'avatar' => $user->avatar_url, // pakai accessor yang sudah kamu buat
+                'role_id' => $user->role_id,
+                'role' => $user->role ? [
+                    'id' => $user->role->id,
+                    'name' => $user->role->name,
+                    'division' => $user->role->division ? [
+                        'id' => $user->role->division->id,
+                        'name' => $user->role->division->name,
+                    ] : null,
+                ] : null,
+            ],
         ]);
     }
 
@@ -116,4 +147,62 @@ class AuthController extends Controller
             'message' => 'Success!',
         ]);
     }
+
+    // tambahan sementara untuk update profile user
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'phone_number' => 'nullable|string|max:20',
+        ]);
+
+        $user->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profil berhasil diperbarui',
+            'data' => [
+                'nip' => $user->nip,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone_number' => $user->phone_number,
+                'avatar' => $user->avatar,
+            ]
+        ]);
+    }
+
+    public function updateAvatar(Request $request)
+{
+    $request->validate([
+        'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // max 2MB
+    ]);
+
+    $user = Auth::user();
+
+    // Hapus avatar lama jika ada
+    if ($user->avatar) {
+        Storage::disk('public')->delete($user->avatar);
+    }
+
+    // Simpan avatar baru di storage/public/avatars
+    $path = $request->file('avatar')->store('avatars', 'public');
+
+    // Update field avatar di DB (simpan path relatif)
+    $user->avatar = $path;
+    $user->save();
+
+    return response()->json([
+        'message' => 'Avatar berhasil diperbarui',
+        'data' => [
+            'avatar' => asset('storage/' . $path), // URL lengkap
+        ]
+    ]);
+}
 }

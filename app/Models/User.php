@@ -22,14 +22,21 @@ class User extends Authenticatable
     ];
 
     // ✅ Tambahkan accessor untuk avatar dengan fallback
+    // public function getAvatarUrlAttribute()
+    // {
+    //     // Cek jika avatar ada di public/images/user/
+    //     if ($this->avatar && file_exists(public_path($this->avatar))) {
+    //         return asset($this->avatar); // → asset('images/user/avatar_1_123.jpg')
+    //     }
+
+    //     // Fallback
+    //     return asset('images/user/default-avatar.jpg');
+    // }
     public function getAvatarUrlAttribute()
     {
-        // Cek jika avatar ada di public/images/user/
-        if ($this->avatar && file_exists(public_path($this->avatar))) {
-            return asset($this->avatar); // → asset('images/user/avatar_1_123.jpg')
+        if ($this->avatar) {
+            return asset($this->avatar);
         }
-
-        // Fallback
         return asset('images/user/default-avatar.jpg');
     }
 

@@ -11,6 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Exports\ShippingsExport;
+use App\Models\DeliveryConfirmation;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 
@@ -205,6 +206,59 @@ class AdminWebController extends Controller
     }
 
     /**
+     * Save As - Create new travel document from existing one
+     */
+    public function shippingsSaveAs(Request $request, $id)
+    {
+        // Validasi dengan pengecekan unique untuk no_travel_document
+        $validator = Validator::make($request->all(), array_merge(
+            $this->getValidationRules(),
+            [
+                'numberSJN' => 'required|string|max:100|unique:travel_document,no_travel_document',
+            ]
+        ), array_merge(
+            $this->getValidationMessages(),
+            [
+                'numberSJN.unique' => 'Nomor SJN sudah digunakan. Gunakan nomor yang berbeda.',
+            ]
+        ), $this->getValidationAttributes($request));
+
+        if ($validator->fails()) {
+            return redirect()->back()->withInput()->withErrors($validator);
+        }
+
+        $validated = $validator->validated();
+
+        DB::beginTransaction();
+        try {
+            // Cek sekali lagi untuk memastikan nomor dokumen belum ada
+            $exists = TravelDocument::where('no_travel_document', $validated['numberSJN'])->exists();
+
+            if ($exists) {
+                return redirect()
+                    ->back()
+                    ->withInput()
+                    ->with('error', 'Nomor SJN sudah digunakan. Gunakan nomor yang berbeda.');
+            }
+
+            // Buat dokumen baru (bukan update yang lama)
+            $newTravelDocument = $this->createTravelDocument($validated);
+            $this->createTravelDocumentItems($newTravelDocument, $validated);
+
+            DB::commit();
+            return redirect()
+                ->route('shippings.index')
+                ->with('success', 'Data pengiriman berhasil disimpan sebagai dokumen baru dengan nomor: ' . $validated['numberSJN']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Delete travel document and its items
      */
     public function shippingsDelete($id)
@@ -239,8 +293,12 @@ class AdminWebController extends Controller
         $qrString = "SJNID:{$id}";
         $qrCode = base64_encode(QrCode::format('svg')->size(200)->errorCorrection('H')->generate($qrString));
 
+        // Sanitasi nama file untuk menghindari error InvalidArgumentException
+        // Ganti karakter / dan \ dengan underscore
+        $sanitizedDocNumber = preg_replace('/[\/\\\\]/', '_', $travelDocument->no_travel_document);
+
         $pdf = PDF::loadView('General.shippings-print', compact('travelDocument', 'qrCode'));
-        return $pdf->stream("SJN_{$travelDocument->no_travel_document}.pdf");
+        return $pdf->stream("SJN_{$sanitizedDocNumber}.pdf");
     }
 
     /**
@@ -285,9 +343,6 @@ class AdminWebController extends Controller
         $locations = TrackingSystem::where('track_id', $track_id)->get(['latitude', 'longitude']);
 
         $initialLocation = $locations->isNotEmpty() ? [$locations->first()->latitude, $locations->first()->longitude] : [0, 0];
-        // $breadcrumbs = [['label' => 'Home', 'url' => route('shippings.index')],
-        //                 ['label' => 'Tracking Pengiriman', 'url' => route('tracking')],
-        //                 ['label' => 'Detail Tracking', 'url' => '#']];
 
         return view('General.tracker', compact('trackingSystem', 'locations', 'initialLocation', 'breadcrumbs'));
     }
@@ -346,11 +401,12 @@ class AdminWebController extends Controller
             'numberRef' => 'required|string|max:100',
             'projectName' => 'required|string|max:255',
             'poNumber' => 'required|string|max:100',
+            'documentDate' => 'nullable|date',  // Validasi untuk document_date
             'itemCode.*' => 'required|string|max:100',
             'itemName.*' => 'required|string|max:255',
             'quantitySend.*' => 'nullable|integer|min:0',
             'totalSend.*' => 'required|integer|min:0',
-            'qtyPreOrder.*' => 'nullable|integer|min:0',
+            'qtyPreOrder.*' => 'nullable|string|max:50',
             'unitType.*' => 'required|exists:units,id',
             'description.*' => 'required|string',
             'information.*' => 'nullable|string',
@@ -368,6 +424,7 @@ class AdminWebController extends Controller
             'numberRef.required' => 'Nomor referensi harus diisi.',
             'projectName.required' => 'Nama proyek harus diisi.',
             'poNumber.required' => 'Nomor PO harus diisi.',
+            'documentDate.date' => 'Format tanggal dokumen tidak valid.',
             'itemCode.*.required' => ':attribute harus diisi.',
             'itemName.*.required' => ':attribute harus diisi.',
             'totalSend.*.required' => ':attribute harus diisi.',
@@ -375,8 +432,8 @@ class AdminWebController extends Controller
             'totalSend.*.min' => ':attribute minimal 0.',
             'quantitySend.*.integer' => ':attribute harus berupa angka.',
             'quantitySend.*.min' => ':attribute minimal 0.',
-            'qtyPreOrder.*.integer' => ':attribute harus berupa angka.',
-            'qtyPreOrder.*.min' => ':attribute minimal 0.',
+            'qtyPreOrder.*.string' => ':attribute harus berupa teks.',
+            'qtyPreOrder.*.max' => ':attribute maksimal 50 karakter.',
             'unitType.*.required' => ':attribute harus diisi.',
             'unitType.*.exists' => ':attribute tidak valid.',
             'description.*.required' => ':attribute harus diisi.',
@@ -414,14 +471,31 @@ class AdminWebController extends Controller
      */
     private function createTravelDocument(array $validated): TravelDocument
     {
+        // Posting date selalu menggunakan tanggal hari ini
+        $postingDate = now();
+
+        // Document date bisa dari input atau default ke posting date
+        if (isset($validated['documentDate']) && !empty($validated['documentDate'])) {
+            $documentDate = \Carbon\Carbon::parse($validated['documentDate']);
+        } else {
+            $documentDate = $postingDate->copy();
+        }
+
+        // Tentukan apakah backdate dengan membandingkan string tanggal
+        $postingDateStr = $postingDate->format('Y-m-d');
+        $documentDateStr = $documentDate->format('Y-m-d');
+        $isBackdate = $documentDateStr !== $postingDateStr;
+
         return TravelDocument::create([
             'no_travel_document' => $validated['numberSJN'],
-            'date_no_travel_document' => now(),
+            'posting_date' => $postingDate,
+            'document_date' => $documentDate,
+            'is_backdate' => $isBackdate,
             'send_to' => $validated['sendTo'],
             'reference_number' => $validated['numberRef'],
             'po_number' => $validated['poNumber'],
             'project' => $validated['projectName'],
-            'status' => 'Belum terkirim', // Sesuai dengan ENUM di migration
+            'status' => 'Belum terkirim',
         ]);
     }
 
@@ -430,13 +504,31 @@ class AdminWebController extends Controller
      */
     private function updateTravelDocument(TravelDocument $travelDocument, array $validated): void
     {
+        // Posting date selalu menggunakan tanggal hari ini saat update
+        $postingDate = now();
+
+        // Document date bisa dari input atau default ke posting date
+        if (isset($validated['documentDate']) && !empty($validated['documentDate'])) {
+            $documentDate = \Carbon\Carbon::parse($validated['documentDate']);
+        } else {
+            $documentDate = $postingDate->copy();
+        }
+
+        // Tentukan apakah backdate dengan membandingkan string tanggal
+        $postingDateStr = $postingDate->format('Y-m-d');
+        $documentDateStr = $documentDate->format('Y-m-d');
+        $isBackdate = $documentDateStr !== $postingDateStr;
+
         $travelDocument->update([
             'no_travel_document' => $validated['numberSJN'],
+            'posting_date' => $postingDate,
+            'document_date' => $documentDate,
+            'is_backdate' => $isBackdate,
             'send_to' => $validated['sendTo'],
             'reference_number' => $validated['numberRef'],
             'po_number' => $validated['poNumber'],
             'project' => $validated['projectName'],
-            'status' => 'Belum terkirim', // Sesuai dengan ENUM di migration
+            'status' => 'Belum terkirim',
         ]);
     }
 
@@ -448,13 +540,29 @@ class AdminWebController extends Controller
         $items = [];
 
         foreach ($validated['itemCode'] as $key => $itemCode) {
+            // Ambil qty_po, jika kosong atau '-' set sebagai null atau 0
+            $qtyPo = $validated['qtyPreOrder'][$key] ?? null;
+
+            // Jika qtyPo adalah '-' atau string non-numeric, simpan sebagai string
+            // Jika numeric, convert ke integer
+            // Jika null/empty, set sebagai null
+            if ($qtyPo === null || $qtyPo === '' || trim($qtyPo) === '') {
+                $qtyPo = null;
+            } elseif ($qtyPo === '-' || !is_numeric($qtyPo)) {
+                // Simpan sebagai string (untuk symbol seperti '-')
+                $qtyPo = trim($qtyPo);
+            } else {
+                // Convert ke integer jika numeric
+                $qtyPo = (int) $qtyPo;
+            }
+
             $items[] = [
                 'travel_document_id' => $travelDocument->id,
                 'item_code' => $itemCode,
                 'item_name' => $validated['itemName'][$key],
                 'qty_send' => $validated['quantitySend'][$key] ?? 0,
                 'total_send' => (int) $validated['totalSend'][$key],
-                'qty_po' => $validated['qtyPreOrder'][$key] ?? 0,
+                'qty_po' => $qtyPo,
                 'unit_id' => $validated['unitType'][$key],
                 'description' => $validated['description'][$key],
                 'information' => $validated['information'][$key] ?? null,
@@ -529,5 +637,34 @@ class AdminWebController extends Controller
         $travelDocument->restore();
 
         return redirect()->route('shippings.trash')->with('success', 'Data pengiriman berhasil direstore.');
+    }
+
+    public function shippingsReport($id) {
+        $travelDocument = TravelDocument::findOrFail($id);
+        $confirmation = DeliveryConfirmation::where('travel_document_id', $id)->first();
+        $tracking = TrackingSystem::where('travel_document_id', $id)
+            ->with('track.locations')
+            ->first();
+        $startTime = null;
+        $endTime = null;
+
+        if ($tracking && $tracking->track && $tracking->track->locations->isNotEmpty()) {
+            $startTime = $tracking->track->locations->first()->created_at;
+            $endTime   = $tracking->track->locations->last()->created_at;
+        }
+
+        $breadcrumbs = [
+            ['label' => 'Home', 'url' => route('shippings.index')],
+            ['label' => 'Manajemen Pengiriman', 'url' => route('shippings.index')],
+            ['label' => 'Shipping Report', 'url' => '#'],
+        ];
+
+        return view('General.shippings-report', compact(
+            'travelDocument',
+            'confirmation',
+            'startTime',
+            'endTime',
+            'breadcrumbs'
+        ));
     }
 }

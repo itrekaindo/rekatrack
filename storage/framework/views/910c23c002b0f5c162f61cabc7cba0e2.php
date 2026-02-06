@@ -156,30 +156,47 @@
                                 <tr>
                                     <th class="text-center" width="60">No</th>
                                     <th>Nomor SJN</th>
-                                    <th>Tanggal</th>
+                                    <th>Tanggal Dokumen</th>
+                                    <th>Tanggal Posting</th>
                                     <th>Kepada</th>
                                     <th>Proyek</th>
                                     <th>Status</th>
-                                    <th class="text-center">Waktu Mulai</th>          <!-- ✅ Baru -->
-                                    <th class="text-center">Waktu Selesai</th>        <!-- ✅ Baru -->
+                                    <th class="text-center">Waktu Mulai</th>
+                                    <th class="text-center">Waktu Selesai</th>
                                     <th class="text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php $__empty_1 = true; $__currentLoopData = $listTravelDocument; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $doc): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                     <tr class="shipping-row" data-status="<?php echo e($doc->status); ?>"
-                                        data-date="<?php echo e($doc->date_no_travel_document); ?>">
+                                        data-document-date="<?php echo e($doc->document_date); ?>"
+                                        data-posting-date="<?php echo e($doc->posting_date); ?>">
                                         <td class="text-center text-muted"><?php echo e($listTravelDocument->firstItem() + $index); ?></td>
                                         <td>
                                             <a href="<?php echo e(route('shippings.detail', $doc->id)); ?>" class="text-primary fw-bold">
                                                 <?php echo e($doc->no_travel_document ?: '-'); ?>
 
                                             </a>
+                                            <?php if($doc->is_backdate): ?>
+                                                <span class="badge badge-warning ms-1" title="Backdate">
+                                                    <i class="fas fa-history"></i>
+                                                </span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <span class="text-muted">
-                                                <?php if($doc->date_no_travel_document): ?>
-                                                    <?php echo e(\Carbon\Carbon::parse($doc->date_no_travel_document)->format('d/m/Y')); ?>
+                                                <?php if($doc->document_date): ?>
+                                                    <?php echo e(\Carbon\Carbon::parse($doc->document_date)->format('d/m/Y')); ?>
+
+                                                <?php else: ?>
+                                                    -
+                                                <?php endif; ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">
+                                                <?php if($doc->posting_date): ?>
+                                                    <?php echo e(\Carbon\Carbon::parse($doc->posting_date)->format('d/m/Y')); ?>
 
                                                 <?php else: ?>
                                                     -
@@ -194,14 +211,14 @@
                                         <td><?php echo e($doc->project ?: '-'); ?></td>
                                         <td>
                                             <?php if($doc->status == 'Belum terkirim'): ?>
-                                                <span class="badge badge-warning">Belum terkirim</span>
+                                                <span class="badge badge-warning badge-status">Belum terkirim</span>
                                             <?php elseif($doc->status == 'Sedang dikirim'): ?>
-                                                <span class="badge badge-info">Sedang dikirim</span>
+                                                <span class="badge badge-info badge-status">Sedang dikirim</span>
                                             <?php elseif($doc->status == 'Terkirim'): ?>
-                                                <span class="badge badge-success">Terkirim</span>
+                                                <span class="badge badge-success badge-status">Terkirim</span>
                                             <?php endif; ?>
                                         </td>
-                                        <!-- ✅ Waktu Mulai -->
+                                        <!-- Waktu Mulai -->
                                         <td class="text-center">
                                             <?php if($doc->start_time): ?>
                                                 <?php echo e(\Carbon\Carbon::parse($doc->start_time)->format('d/m/Y H:i')); ?>
@@ -210,7 +227,7 @@
                                                 <span class="text-muted">-</span>
                                             <?php endif; ?>
                                         </td>
-                                        <!-- ✅ Waktu Selesai -->
+                                        <!-- Waktu Selesai -->
                                         <td class="text-center">
                                             <?php if($doc->end_time): ?>
                                                 <?php echo e(\Carbon\Carbon::parse($doc->end_time)->format('d/m/Y H:i')); ?>
@@ -221,6 +238,13 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="form-button-action">
+                                                <?php if($doc->status === 'Terkirim'): ?>
+                                                    <a href="<?php echo e(route('shippings.report', $doc->id)); ?>"
+                                                        class="btn btn-link btn-success btn-lg"
+                                                        title="Lihat Laporan Surat Jalan">
+                                                        <i class="fas fa-file-alt"></i>
+                                                    </a>
+                                                <?php endif; ?>
                                                 <a href="<?php echo e(route('shippings.detail', $doc->id)); ?>"
                                                     class="btn btn-link btn-primary btn-lg" title="Detail">
                                                     <i class="fas fa-eye"></i>
@@ -234,7 +258,7 @@
                                     </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                     <tr>
-                                        <td colspan="9" class="text-center py-5"> <!-- ⚠️ Ubah colspan jadi 9 -->
+                                        <td colspan="10" class="text-center py-5">
                                             <i class="fas fa-inbox fs-1 d-block mb-3 text-muted"></i>
                                             <p class="mb-0 text-muted">Tidak ada data pengiriman</p>
                                         </td>
@@ -258,6 +282,12 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Form (Hidden) -->
+    <form id="deleteForm" method="POST" style="display: none;">
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('DELETE'); ?>
+    </form>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('modals'); ?>
@@ -272,6 +302,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tipe Tanggal</label>
+                        <select class="form-select" id="filterDateType">
+                            <option value="document">Tanggal Dokumen</option>
+                            <option value="posting">Tanggal Posting</option>
+                        </select>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Tanggal Mulai</label>
                         <input type="date" class="form-control" id="filterStartDate" />
@@ -335,16 +372,11 @@
     </div>
 <?php $__env->stopPush(); ?>
 
-<?php $__env->startPush('styles'); ?>
-    <style>
-
-    </style>
-<?php $__env->stopPush(); ?>
-
 <?php $__env->startPush('scripts'); ?>
     <script>
         let startDateFilter = '';
         let endDateFilter = '';
+        let dateTypeFilter = 'document'; // default filter by document date
 
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchInput');
@@ -358,18 +390,23 @@
                 rows.forEach(row => {
                     const text = row.textContent.toLowerCase();
                     const status = row.dataset.status;
-                    const rowDate = row.dataset.date;
+                    const documentDate = row.dataset.documentDate;
+                    const postingDate = row.dataset.postingDate;
 
                     const matchesSearch = text.includes(searchTerm);
                     const matchesStatus = !statusValue || status === statusValue;
-                    const matchesDate = checkDateRange(rowDate);
+                    const matchesDate = checkDateRange(documentDate, postingDate);
 
                     row.style.display = (matchesSearch && matchesStatus && matchesDate) ? '' : 'none';
                 });
             }
 
-            function checkDateRange(dateStr) {
+            function checkDateRange(documentDate, postingDate) {
                 if (!startDateFilter && !endDateFilter) return true;
+
+                // Pilih tanggal yang akan difilter berdasarkan tipe
+                const dateStr = dateTypeFilter === 'document' ? documentDate : postingDate;
+
                 if (!dateStr) return false;
 
                 const rowDate = new Date(dateStr);
@@ -396,9 +433,11 @@
         function applyDateFilter() {
             const startDate = document.getElementById('filterStartDate').value;
             const endDate = document.getElementById('filterEndDate').value;
+            const dateType = document.getElementById('filterDateType').value;
 
             startDateFilter = startDate;
             endDateFilter = endDate;
+            dateTypeFilter = dateType;
 
             // Update UI
             updateDateFilterDisplay();
@@ -414,9 +453,11 @@
         function clearDateFilter() {
             startDateFilter = '';
             endDateFilter = '';
+            dateTypeFilter = 'document';
 
             document.getElementById('filterStartDate').value = '';
             document.getElementById('filterEndDate').value = '';
+            document.getElementById('filterDateType').value = 'document';
 
             updateDateFilterDisplay();
             window.filterTable();
@@ -440,13 +481,15 @@
                 activeFilters.style.display = 'block';
                 dateRangeDisplay.style.display = 'inline-flex';
 
-                let displayText = '';
+                const dateTypeLabel = dateTypeFilter === 'document' ? 'Dokumen' : 'Posting';
+                let displayText = `[${dateTypeLabel}] `;
+
                 if (startDateFilter && endDateFilter) {
-                    displayText = `${formatDate(startDateFilter)} - ${formatDate(endDateFilter)}`;
+                    displayText += `${formatDate(startDateFilter)} - ${formatDate(endDateFilter)}`;
                 } else if (startDateFilter) {
-                    displayText = `Dari ${formatDate(startDateFilter)}`;
+                    displayText += `Dari ${formatDate(startDateFilter)}`;
                 } else if (endDateFilter) {
-                    displayText = `Sampai ${formatDate(endDateFilter)}`;
+                    displayText += `Sampai ${formatDate(endDateFilter)}`;
                 }
                 dateRangeText.textContent = displayText;
             } else {

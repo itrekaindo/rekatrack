@@ -102,7 +102,7 @@
             Menampilkan <?php echo e($users->firstItem()); ?>–<?php echo e($users->lastItem()); ?> dari <?php echo e($users->total()); ?> data
           </small>
           <nav aria-label="Navigasi halaman">
-            <?php echo e($users->onEachSide(1)->links('pagination.kaiadmin')); ?>
+            <?php echo e($users->onEachSide(1)->links('pagination::bootstrap-5')); ?>
 
           </nav>
         </div>

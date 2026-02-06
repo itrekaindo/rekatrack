@@ -104,7 +104,7 @@
             Menampilkan {{ $users->firstItem() }}–{{ $users->lastItem() }} dari {{ $users->total() }} data
           </small>
           <nav aria-label="Navigasi halaman">
-            {{ $users->onEachSide(1)->links('pagination.kaiadmin') }}
+            {{ $users->onEachSide(1)->links('pagination::bootstrap-5') }}
           </nav>
         </div>
       @endif

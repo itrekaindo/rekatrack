@@ -11,8 +11,11 @@ class Location extends Model
 
     protected $table = 'location';
 
+    // protected $fillable = [
+    //     'track_id', 'latitude', 'longitude', 'time_stamp',
+    // ];
     protected $fillable = [
-        'track_id', 'latitude', 'longitude', 'time_stamp',
+        'track_id', 'latitude', 'longitude', 'is_checkpoint', 'distance_from_last', 'time_stamp',
     ];
 
     public function track()

@@ -108,8 +108,13 @@
                                             </td>
                                             <td>{{ $shipping->project ?: '-' }}</td>
                                             <td>
-                                                @if($shipping->date_no_travel_document)
+                                                {{-- @if($shipping->date_no_travel_document)
                                                     {{ \Carbon\Carbon::parse($shipping->date_no_travel_document)->format('d/m/Y') }}
+                                                @else
+                                                    -
+                                                @endif --}}
+                                                @if($shipping->posting_date)
+                                                    {{ \Carbon\Carbon::parse($shipping->posting_date)->format('d/m/Y') }}
                                                 @else
                                                     -
                                                 @endif
@@ -158,8 +163,8 @@
                                             </td>
                                             <td>{{ $shipping->project ?: '-' }}</td>
                                             <td>
-                                                @if($shipping->date_no_travel_document)
-                                                    {{ \Carbon\Carbon::parse($shipping->date_no_travel_document)->format('d/m/Y') }}
+                                                @if($shipping->posting_date)
+                                                    {{ \Carbon\Carbon::parse($shipping->posting_date)->format('d/m/Y') }}
                                                 @else
                                                     -
                                                 @endif
@@ -179,7 +184,8 @@
     @endif
 
     <!-- === Peta === -->
-    <div class="row mt-4">
+    {{-- <div class="row mt-4"> --}}
+    <div class="row mt-4" id="map-section">
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body p-0" style="height: 700px; position: relative;">
@@ -212,127 +218,202 @@
         const map = L.map("map").setView([-2.5489, 118.0132], 5);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 18,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            // attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
+
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+        // ICON
+        function greenIcon() {
+            return L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+            });
+        }
+
+        function redIcon() {
+            return L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+            });
+        }
+
+        function homeIcon() {
+            return L.icon({
+                iconUrl: '/images/logo/home-icon.png', // icon truk warna merah
+                iconSize: [42, 42],
+                iconAnchor: [21, 21],
+                popupAnchor: [0, -20]
+            });
+        }
+
+        // CLEAR MAP
+        function clearMap() {
+            map.eachLayer(layer => {
+                if (!(layer instanceof L.TileLayer)) map.removeLayer(layer);
+            });
+        }
 
         function loadTracking(sjn) {
             fetch(`{{ route('tracking.search') }}?no_travel_document=${encodeURIComponent(sjn)}`)
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.locations?.length > 0) {
-                        updateMapWithLocations(data.locations);
-                    } else {
+                .then(async data => {
+
+                    if (!data.success || !data.locations?.length) {
                         showAlert('error', data.message || 'Tidak ada data lokasi');
+                        return;
                     }
+
+                    scrollToMap();
+
+                    data.locations.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+                    const locations = data.locations;
+                    const latLngs = locations.map(l => [parseFloat(l.latitude), parseFloat(l.longitude)]);
+                    const lastIdx = latLngs.length - 1;
+
+                    clearMap();
+
+                    // MARKER AWAL
+                    const startMarker = L.marker(latLngs[0], { icon: homeIcon() }).addTo(map);
+                    showLoadingPopup(startMarker);
+                    startMarker.setPopupContent(`
+                        <strong>🚚 Titik Awal</strong><br>
+                        ${await getReverseGeocode(latLngs[0][0], latLngs[0][1])}<br>
+                        ${locations[0].timestamp}
+                    `);
+
+                    // CHECKPOINT
+                    if (latLngs.length > 2) {
+                        for (let i = 1; i < lastIdx; i++) {
+                            const cp = L.circleMarker(latLngs[i], {
+                                radius: 2,
+                                color: '#ff7800',
+                                fillOpacity: 0.8
+                            }).addTo(map);
+
+                            cp.bindPopup(`
+                                <strong>Checkpoint ${i}</strong><br>
+                                ${await getReverseGeocode(latLngs[i][0], latLngs[i][1])}<br>
+                                ${locations[i].timestamp}
+                            `);
+                        }
+                    }
+
+                    // MARKER AKHIR / BERJALAN
+                    const isActive = data.status?.toLowerCase().includes('sedang');
+                    const endLabel = isActive ? '🚚 Lokasi Berjalan' : '🏁 Titik Akhir';
+
+                    // const endMarker = L.marker(latLngs[lastIdx], { icon: redIcon() }).addTo(map);
+                    const endMarker = L.marker(latLngs[lastIdx], { icon: redIcon() }).addTo(map);
+                    showLoadingPopup(endMarker);
+                    endMarker.setPopupContent(`
+                        <strong>${endLabel}</strong><br>
+                        ${await getReverseGeocode(latLngs[lastIdx][0], latLngs[lastIdx][1])}<br>
+                        ${locations[lastIdx].timestamp}
+                    `).openPopup();
+
+                    // ROUTE ORS (SATU-SATUNYA)
+                    if (latLngs.length > 1) {
+                        fetch('{{ route("tracking.route") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            },
+                            body: JSON.stringify({ waypoints: latLngs })
+                        })
+                        .then(r => r.json())
+                        .then(route => {
+                            const roadPath = route.features[0].geometry.coordinates
+                                .map(c => [c[1], c[0]]);
+
+                            const roadLine = L.polyline(roadPath, {
+                                color: '#1572e8',
+                                weight: 5
+                            }).addTo(map);
+
+                            map.fitBounds(roadLine.getBounds(), { padding: [60, 60] });
+                        });
+                    } else {
+                        map.setView(latLngs[0], 16);
+                    }
+
                 })
-                .catch(err => {
-                    console.error(err);
-                    showAlert('error', 'Gagal memuat data tracking');
-                });
+                .catch(() => showAlert('error', 'Gagal memuat tracking'));
         }
 
-        function searchTracking() {
-            const query = document.getElementById("search")?.value?.trim();
-            if (!query) {
-                showAlert('warning', 'Masukkan nomor surat jalan');
+        // REALTIME (TANPA GARIS GPS)
+        function renderTrackingRealtime(locations, status) {
+            clearMap();
+
+            locations.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            const latLngs = locations.map(l => [parseFloat(l.latitude), parseFloat(l.longitude)]);
+
+            const startMarker = L.marker(latLngs[0], { icon: greenIcon() })
+                .addTo(map)
+                .bindPopup('📍 Titik Awal')
+                .openPopup();
+
+            if (latLngs.length === 1) {
+                map.setView(latLngs[0], 15);
                 return;
             }
-            loadTracking(query);
+
+            const isActive = status.toLowerCase().includes('sedang');
+            const lastLabel = isActive ? '🚚 Lokasi Berjalan' : '🏁 Titik Akhir';
+
+            L.marker(latLngs.at(-1), { icon: redIcon() })
+                .addTo(map)
+                .bindPopup(lastLabel)
+                .openPopup();
+
+            map.setView(latLngs.at(-1), 15);
         }
 
-        async function updateMapWithLocations(locations) {
-            map.eachLayer(layer => {
-                if (!(layer instanceof L.TileLayer)) map.removeLayer(layer);
-            });
-
-            const latLngs = locations.map(loc => [loc.latitude, loc.longitude]);
-            const firstLoc = latLngs[0];
-            const lastLoc = latLngs[latLngs.length - 1];
-
-            // Titik Awal
-            const startMarker = L.marker(firstLoc, {
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41]
-                })
-            }).addTo(map);
-            showLoadingPopup(startMarker, 'Memuat lokasi awal...');
-
-            // Titik Akhir
-            const endMarker = L.marker(lastLoc).addTo(map);
-            showLoadingPopup(endMarker, 'Memuat lokasi akhir...');
-
-            const startAddress = await getReverseGeocode(firstLoc[0], firstLoc[1]);
-            const endAddress = await getReverseGeocode(lastLoc[0], lastLoc[1]);
-
-            startMarker.setPopupContent(`
-                <div class="geocode-popup">
-                    <strong>📍 Titik Awal</strong><br>
-                    <small>${startAddress}</small>
-                </div>
-            `);
-
-            endMarker.setPopupContent(`
-                <div class="geocode-popup">
-                    <strong>🏁 Lokasi Terakhir</strong><br>
-                    <small>${endAddress}</small>
-                </div>
-            `).openPopup();
-
-            // Checkpoint
-            if (latLngs.length > 2) {
-                for (let i = 1; i < latLngs.length - 1; i++) {
-                    L.marker(latLngs[i], {
-                        icon: L.divIcon({
-                            html: `<div style="background:#1572e8;width:10px;height:10px;border-radius:50%;border:2px solid white;"></div>`,
-                            iconSize: [10, 10],
-                            iconAnchor: [5, 5]
-                        })
-                    }).addTo(map).bindPopup(`Checkpoint ${i}`);
-                }
-            }
-
-            // Rute
-            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            try {
-                const response = await fetch('{{ route("tracking.route") }}', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-                    body: JSON.stringify({ start: firstLoc, end: lastLoc })
-                });
-                const data = await response.json();
-
-                if (data.features?.[0]?.geometry?.coordinates) {
-                    const route = data.features[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                    L.polyline(route, { color: '#1572e8', weight: 4, opacity: 0.7 }).addTo(map);
-                    map.fitBounds(L.latLngBounds(route), { padding: [50, 50] });
-                } else {
-                    L.polyline(latLngs, { color: '#6c757d', weight: 2, dashArray: '5,5' }).addTo(map);
-                    map.fitBounds(L.latLngBounds(latLngs), { padding: [50, 50] });
-                }
-            } catch (err) {
-                L.polyline(latLngs, { color: '#6c757d', weight: 2, dashArray: '5,5' }).addTo(map);
-                map.fitBounds(L.latLngBounds(latLngs), { padding: [50, 50] });
-            }
+        // function searchTracking() {
+        //     const query = document.getElementById("search")?.value?.trim();
+        //     if (!query) {
+        //         showAlert('warning', 'Masukkan nomor surat jalan');
+        //         return;
+        //     }
+        //     loadTracking(query);
+        // }
+        function searchTracking() {
+            const sjn = document.getElementById("search")?.value?.trim();
+            if (!sjn) return showAlert('warning', 'Masukkan nomor surat jalan');
+            loadTracking(sjn);
         }
 
+        // async function getReverseGeocode(lat, lng) {
+        //     try {
+        //         const response = await fetch(
+        //             `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=id`
+        //         );
+        //         const data = await response.json();
+        //         if (data.display_name) {
+        //             let addr = data.display_name;
+        //             if (addr.length > 70) addr = addr.substring(0, 70) + '...';
+        //             return addr;
+        //         }
+        //         return "Alamat tidak ditemukan";
+        //     } catch (error) {
+        //         console.error("Geocode error:", error);
+        //         return "Alamat tidak tersedia";
+        //     }
+        // }
         async function getReverseGeocode(lat, lng) {
             try {
-                const response = await fetch(
-                    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=id`
-                );
-                const data = await response.json();
-                if (data.display_name) {
-                    let addr = data.display_name;
-                    if (addr.length > 70) addr = addr.substring(0, 70) + '...';
-                    return addr;
-                }
-                return "Alamat tidak ditemukan";
-            } catch (error) {
-                console.error("Geocode error:", error);
-                return "Alamat tidak tersedia";
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+                const data = await res.json();
+                return data.display_name || 'Alamat tidak ditemukan';
+            } catch {
+                return 'Alamat tidak tersedia';
             }
         }
 
@@ -355,5 +436,45 @@
         document.getElementById('search')?.addEventListener('keypress', e => {
             if (e.key === 'Enter') searchTracking();
         });
+
+        function scrollToMap() {
+            const el = document.getElementById('map-section');
+            if (!el) return;
+
+            el.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+
+            // Pastikan Leaflet resize dengan benar
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 500);
+        }
+
+        // Refresh seluruh halaman setiap 30 detik
+        setInterval(() => {
+            window.location.reload();
+        }, 30000);
+
+        // Atau hanya refresh data tabel (lebih ringan)
+        setInterval(() => {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, "text/html");
+
+                    // Ganti hanya bagian tabel aktif
+                    document.querySelector('.card:has(h4:contains("Pengiriman Aktif"))')
+                        .innerHTML = doc.querySelector('.card:has(h4:contains("Pengiriman Aktif"))')
+                        .innerHTML;
+
+                    // Ganti tabel terkirim juga
+                    document.querySelector('.card:has(h4:contains("Pengiriman Terkirim"))')
+                        .innerHTML = doc.querySelector('.card:has(h4:contains("Pengiriman Terkirim"))')
+                        .innerHTML;
+                });
+        }, 30000);
     </script>
 @endpush

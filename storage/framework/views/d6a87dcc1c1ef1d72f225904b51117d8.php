@@ -4,7 +4,7 @@
     <div class="logo-header" data-background-color="dark">
       <a href="<?php echo e(route('shippings.index')); ?>" class="logo">
         <img
-          src="<?php echo e(asset('images/logo/logo-rekatrack.png')); ?>"
+          src="<?php echo e(asset('images/logo/logo-rekatrack.svg')); ?>"
           alt="RekaTrack"
           class="navbar-brand"
           height="24"
@@ -30,9 +30,18 @@
   <div class="sidebar-wrapper scrollbar scrollbar-inner">
     <div class="sidebar-content">
       <ul class="nav nav-secondary">
+
+        <!-- Main Section -->
+        <li class="nav-section">
+          <span class="sidebar-mini-icon">
+            <i class="fa fa-ellipsis-h"></i>
+          </span>
+          <h4 class="text-section">Menu Utama</h4>
+        </li>
+
         <!-- Menu: Manajemen Pengiriman -->
-        <li class="nav-item <?php echo e(request()->routeIs('shippings.*') ? 'active' : ''); ?>">
-          <a class="nav-link" href="<?php echo e(route('shippings.index')); ?>" title="Manajemen Pengiriman">
+        <li class="nav-item <?php echo e(request()->routeIs('shippings.*') && !request()->routeIs('shippings.trash') ? 'active' : ''); ?>">
+          <a class="nav-link" href="<?php echo e(route('shippings.index')); ?>" data-tooltip="Manajemen Pengiriman">
             <i class="fas fa-boxes"></i>
             <p>Manajemen Pengiriman</p>
           </a>
@@ -40,7 +49,7 @@
 
         <!-- Menu: Manajemen Unit -->
         <li class="nav-item <?php echo e(request()->routeIs('units.*') ? 'active' : ''); ?>">
-          <a class="nav-link" href="<?php echo e(route('units.index')); ?>" title="Manajemen Satuan Unit">
+          <a class="nav-link" href="<?php echo e(route('units.index')); ?>" data-tooltip="Manajemen Unit">
             <i class="fas fa-balance-scale"></i>
             <p>Manajemen Unit</p>
           </a>
@@ -48,22 +57,32 @@
 
         <!-- Menu: Tracking -->
         <li class="nav-item <?php echo e(request()->routeIs('tracking.*') ? 'active' : ''); ?>">
-          <a class="nav-link" href="<?php echo e(route('tracking.index')); ?>" title="Tracking">
+          <a class="nav-link" href="<?php echo e(route('tracking.index')); ?>" data-tooltip="Tracking Pengiriman">
             <i class="fas fa-map-marked-alt"></i>
-            <p>Tracking</p>
+            <p>Tracking Pengiriman</p>
           </a>
         </li>
 
-        <!-- ✅ Menu: Trash (Hanya untuk Admin & Super Admin) -->
-
-        <li class="nav-item <?php echo e(request()->routeIs('shippings.trash') ? 'active' : ''); ?>">
-            <a class="nav-link" href="<?php echo e(route('shippings.trash')); ?>" title="Trash Pengiriman">
-              <i class="fas fa-recycle"></i>
-              <p>Trash</p>
-            </a>
+        <!-- Utilities Section -->
+        <li class="nav-section">
+          <span class="sidebar-mini-icon">
+            <i class="fa fa-ellipsis-h"></i>
+          </span>
+          <h4 class="text-section">Utilities</h4>
         </li>
 
-        <!-- Menu: Manajemen User (Only for Super Admin) -->
+        <!-- Menu: Trash -->
+        <li class="nav-item <?php echo e(request()->routeIs('shippings.trash') ? 'active' : ''); ?>">
+          <a class="nav-link" href="<?php echo e(route('shippings.trash')); ?>" data-tooltip="Recycle Bin">
+            <i class="fa-solid fa-trash-arrow-up"></i>
+            <p>Recycle Bin</p>
+            <?php if(isset($trashedCount) && $trashedCount > 0): ?>
+              <span class="badge badge-danger"><?php echo e($trashedCount); ?></span>
+            <?php endif; ?>
+          </a>
+        </li>
+
+        <!-- Administrator Section (Only for Super Admin) -->
         <?php if(auth()->check() && auth()->user()->role?->name == 'Super Admin'): ?>
           <li class="nav-section">
             <span class="sidebar-mini-icon">
@@ -71,14 +90,36 @@
             </span>
             <h4 class="text-section">Administrator</h4>
           </li>
+
           <li class="nav-item <?php echo e(request()->routeIs('users.*') ? 'active' : ''); ?>">
-            <a class="nav-link" href="<?php echo e(route('users.index')); ?>" title="Manajemen User">
+            <a class="nav-link" href="<?php echo e(route('users.index')); ?>" data-tooltip="Manajemen User">
               <i class="fas fa-users-cog"></i>
               <p>Manajemen User</p>
             </a>
           </li>
         <?php endif; ?>
+
       </ul>
+    </div>
+  </div>
+
+  <!-- Sidebar Footer (Optional) -->
+  <div class="sidebar-footer">
+    <div class="user-box">
+      <div class="avatar-sm float-start me-2">
+        <?php if(auth()->user()->avatar): ?>
+          <img src="<?php echo e(asset('storage/' . auth()->user()->avatar)); ?>" alt="user-img" class="avatar-title rounded-circle">
+        <?php else: ?>
+          <span class="avatar-title rounded-circle bg-soft-primary text-primary">
+            <?php echo e(strtoupper(substr(auth()->user()->name, 0, 1))); ?>
+
+          </span>
+        <?php endif; ?>
+      </div>
+      <div class="user-info">
+        <h6 class="mb-0"><?php echo e(auth()->user()->name); ?></h6>
+        <p class="text-muted mb-0"><?php echo e(auth()->user()->role?->name ?? 'User'); ?></p>
+      </div>
     </div>
   </div>
 </div>

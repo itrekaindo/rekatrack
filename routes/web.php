@@ -63,11 +63,13 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/', [AdminWebController::class, 'shippingsAddTravelDocument'])->name('store');
             Route::get('/{id}', [AdminWebController::class, 'shippingsDetail'])->name('detail');
             Route::get('/{id}/edit', [AdminWebController::class, 'shippingsEdit'])->name('edit');
+            Route::post('/save-as/{id}', [AdminWebController::class, 'shippingsSaveAs'])->name('save-as');
             Route::put('/{id}', [AdminWebController::class, 'shippingsUpdate'])->name('update');
             Route::delete('/{id}', [AdminWebController::class, 'shippingsDelete'])->name('destroy');
             Route::get('/{id}/print', [AdminWebController::class, 'printShippings'])->name('print');
             // Route::get('/trash', [AdminWebController::class, 'shippingsTrash'])->name('trash');
             Route::post('/{id}/restore', [AdminWebController::class, 'shippingsRestore'])->name('restore');
+            Route::get('/{id}/report', [AdminWebController::class, 'shippingsReport'])->name('report');
         });
 
     // Tracking Routes

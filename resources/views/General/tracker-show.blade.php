@@ -133,6 +133,9 @@
       const end = latLngs[latLngs.length - 1];
       const apiKey = '5b3ce3597851110001cf6248b4c0aaa51d204cea888ada05975d8638';
 
+      // Actual
+      L.polyline(latLngs, { color: '#1572e8', weight: 5 }).addTo(map);
+
       fetch(`https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${start[1]},${start[0]}&end=${end[1]},${end[0]}`)
         .then(response => response.json())
         .then(data => {

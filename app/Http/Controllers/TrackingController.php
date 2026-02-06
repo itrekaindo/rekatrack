@@ -21,14 +21,14 @@ class TrackingController extends Controller
 
         // Ambil data (batasi 5 masing-masing)
         $activeShippings = TravelDocument::whereRaw("LOWER(status) LIKE '%sedang%'")
-            ->select('id', 'no_travel_document', 'send_to', 'project', 'date_no_travel_document')
-            ->orderBy('date_no_travel_document', 'desc')
+            ->select('id', 'no_travel_document', 'send_to', 'project', 'posting_date')
+            ->orderBy('posting_date', 'desc')
             ->limit(5)
             ->get();
 
         $deliveredShippings = TravelDocument::where('status', 'Terkirim')
-            ->select('id', 'no_travel_document', 'send_to', 'project', 'date_no_travel_document')
-            ->orderBy('date_no_travel_document', 'desc')
+            ->select('id', 'no_travel_document', 'send_to', 'project', 'posting_date')
+            ->orderBy('posting_date', 'desc')
             ->limit(5)
             ->get();
 
@@ -49,6 +49,39 @@ class TrackingController extends Controller
     /**
      * Cari tracking berdasarkan no_travel_document (dipanggil via AJAX)
      */
+    // public function search(Request $request)
+    // {
+    //     $request->validate([
+    //         'no_travel_document' => 'required|string|max:100'
+    //     ]);
+
+    //     // Ambil travel document + relasi trackingSystems
+    //     $travelDocument = TravelDocument::where('no_travel_document', $request->no_travel_document)
+    //         ->with('trackingSystems')
+    //         ->first();
+
+    //     if (!$travelDocument || $travelDocument->trackingSystems->isEmpty()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Data pengiriman tidak ditemukan atau belum memiliki tracking'
+    //         ]);
+    //     }
+
+    //     // Ekstrak lokasi dari tabel `location` berdasarkan track_id
+    //     $locations = $this->extractLocations($travelDocument);
+
+    //     if (empty($locations)) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Belum ada data lokasi yang direkam untuk pengiriman ini'
+    //         ]);
+    //     }
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'locations' => $locations
+    //     ]);
+    // }
     public function search(Request $request)
     {
         $request->validate([
@@ -60,25 +93,31 @@ class TrackingController extends Controller
             ->with('trackingSystems')
             ->first();
 
-        if (!$travelDocument || $travelDocument->trackingSystems->isEmpty()) {
+        if (!$travelDocument) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data pengiriman tidak ditemukan atau belum memiliki tracking'
-            ]);
+                'message' => 'Surat jalan tidak ditemukan'
+            ], 404);
         }
 
         // Ekstrak lokasi dari tabel `location` berdasarkan track_id
         $locations = $this->extractLocations($travelDocument);
 
         if (empty($locations)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Belum ada data lokasi yang direkam untuk pengiriman ini'
-            ]);
+            // pastikan field origin ada
+            if ($travelDocument->latitude && $travelDocument->longitude) {
+                $locations[] = [
+                    'latitude'  => (float) $travelDocument->latitude,
+                    'longitude' => (float) $travelDocument->longitude,
+                    'timestamp' => $travelDocument->date_no_travel_document
+                        ?? now()->toDateTimeString()
+                ];
+            }
         }
 
         return response()->json([
             'success' => true,
+            'status' => $travelDocument->status,
             'locations' => $locations
         ]);
     }
@@ -86,15 +125,47 @@ class TrackingController extends Controller
     /**
      * Ambil rute dari OpenRouteService (via backend agar API key aman)
      */
+    // public function getRoute(Request $request)
+    // {
+    //     $request->validate([
+    //         'start' => 'required|array|size:2',
+    //         'end' => 'required|array|size:2',
+    //         'start.0' => 'numeric|between:-90,90',
+    //         'start.1' => 'numeric|between:-180,180',
+    //         'end.0' => 'numeric|between:-90,90',
+    //         'end.1' => 'numeric|between:-180,180',
+    //     ]);
+
+    //     $apiKey = env('OPENROUTE_SERVICE_API_KEY');
+    //     if (!$apiKey) {
+    //         return response()->json(['error' => 'API key rute tidak dikonfigurasi'], 500);
+    //     }
+
+    //     try {
+    //         $response = Http::timeout(10)
+    //             ->withHeaders(['Authorization' => $apiKey])
+    //             ->get('https://api.openrouteservice.org/v2/directions/driving-car', [
+    //                 'start' => implode(',', [$request->start[1], $request->start[0]]),
+    //                 'end' => implode(',', [$request->end[1], $request->end[0]]),
+    //                 'geometry_format' => 'geojson'
+    //             ]);
+
+    //         if ($response->successful() && !empty($response->json('features'))) {
+    //             return response()->json($response->json());
+    //         }
+
+    //         return response()->json(['error' => 'Tidak dapat menghasilkan rute'], 500);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['error' => 'Gagal terhubung ke layanan rute'], 500);
+    //     }
+    // }
     public function getRoute(Request $request)
     {
         $request->validate([
-            'start' => 'required|array|size:2',
-            'end' => 'required|array|size:2',
-            'start.0' => 'numeric|between:-90,90',
-            'start.1' => 'numeric|between:-180,180',
-            'end.0' => 'numeric|between:-90,90',
-            'end.1' => 'numeric|between:-180,180',
+            'waypoints' => 'required|array|min:2', // array [ [lat,long], ... ]
+            'waypoints.*' => 'array|size:2',
+            'waypoints.*.0' => 'numeric|between:-90,90',
+            'waypoints.*.1' => 'numeric|between:-180,180',
         ]);
 
         $apiKey = env('OPENROUTE_SERVICE_API_KEY');
@@ -103,12 +174,13 @@ class TrackingController extends Controller
         }
 
         try {
-            $response = Http::timeout(10)
+            // Format for ORS: [[long1,lat1], [long2,lat2], ...]
+            $coordinates = array_map(fn($point) => [$point[1], $point[0]], $request->waypoints);
+
+            $response = Http::timeout(30) // naikkan timeout
                 ->withHeaders(['Authorization' => $apiKey])
-                ->get('https://api.openrouteservice.org/v2/directions/driving-car', [
-                    'start' => implode(',', [$request->start[1], $request->start[0]]),
-                    'end' => implode(',', [$request->end[1], $request->end[0]]),
-                    'geometry_format' => 'geojson'
+                ->post('https://api.openrouteservice.org/v2/directions/driving-car/geojson', [
+                    'coordinates' => $coordinates,
                 ]);
 
             if ($response->successful() && !empty($response->json('features'))) {
@@ -117,7 +189,7 @@ class TrackingController extends Controller
 
             return response()->json(['error' => 'Tidak dapat menghasilkan rute'], 500);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Gagal terhubung ke layanan rute'], 500);
+            return response()->json(['error' => 'Gagal terhubung ke layanan rute: ' . $e->getMessage()], 500);
         }
     }
 
@@ -130,20 +202,42 @@ class TrackingController extends Controller
     {
         $locations = [];
 
-        foreach ($travelDocument->trackingSystems as $ts) {
-            // Ambil semua lokasi untuk track_id ini, urutkan berdasarkan time_stamp
-            $locRecords = Location::where('track_id', $ts->track_id)
-                ->orderBy('time_stamp', 'asc')
-                ->get(['latitude', 'longitude', 'time_stamp']);
+        // foreach ($travelDocument->trackingSystems as $ts) {
+        //     // Ambil semua lokasi untuk track_id ini, urutkan berdasarkan time_stamp
+        //     $locRecords = Location::where('track_id', $ts->track_id)
+        //         ->orderBy('time_stamp', 'asc')
+        //         ->get(['latitude', 'longitude', 'time_stamp']);
 
-            foreach ($locRecords as $loc) {
-                if ($loc->latitude && $loc->longitude) {
-                    $locations[] = [
-                        'latitude' => (float) $loc->latitude,
-                        'longitude' => (float) $loc->longitude,
-                        'timestamp' => $loc->time_stamp
-                    ];
-                }
+        //     foreach ($locRecords as $loc) {
+        //         if ($loc->latitude && $loc->longitude) {
+        //             $locations[] = [
+        //                 'latitude' => (float) $loc->latitude,
+        //                 'longitude' => (float) $loc->longitude,
+        //                 'timestamp' => $loc->time_stamp
+        //             ];
+        //         }
+        //     }
+        // }
+        $latestTrackingSystem = $travelDocument->trackingSystems()
+            ->orderBy('time_stamp', 'desc')
+            ->first();
+
+        if (!$latestTrackingSystem) {
+            return [];
+        }
+
+        $locRecords = Location::where('track_id', $latestTrackingSystem->track_id)
+            ->orderBy('time_stamp', 'asc')
+            ->get(['latitude', 'longitude', 'time_stamp']);
+
+
+        foreach ($locRecords as $loc) {
+            if ($loc->latitude && $loc->longitude) {
+                $locations[] = [
+                    'latitude'  => (float) $loc->latitude,
+                    'longitude' => (float) $loc->longitude,
+                    'timestamp' => $loc->time_stamp
+                ];
             }
         }
 
@@ -156,7 +250,8 @@ class TrackingController extends Controller
             $isDup = false;
             foreach ($filtered as $f) {
                 $dist = $this->calculateDistance($f['latitude'], $f['longitude'], $loc['latitude'], $loc['longitude']);
-                if ($dist < 0.01) { // 0.01 km = 10 meter
+                // if ($dist < 0.01) { // 0.01 km = 10 meter
+                if ($dist < 0.015) { // 15 meter
                     $isDup = true;
                     break;
                 }
